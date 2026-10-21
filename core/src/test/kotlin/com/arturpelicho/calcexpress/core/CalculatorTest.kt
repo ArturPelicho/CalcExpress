@@ -254,6 +254,15 @@ class CalculatorTest {
         near(10.0, o.values[0].second.single())
     }
 
+    @Test fun formulaSectionsAreGroupedAndFilled() {
+        val cats = FormulaCategory.entries
+        // Maths sections come first, then engineering, with no interleaving.
+        assertEquals(cats.sortedBy { it.area.ordinal }, cats)
+        for (c in cats) assertTrue(Formulas.byCategory(c).isNotEmpty(), "$c is empty")
+        assertEquals(Formulas.all.size, Formulas.all.map { it.id }.toSet().size)
+        assertEquals(FormulaCategory.BEAMS, Formulas.all.first { it.id == "bending_stress" }.category)
+    }
+
     @Test fun allFormulasParse() {
         for (f in Formulas.all) for (sys in UnitSystem.entries) {
             val o = Analysis.evaluate(f.build(sys), AngleUnit.RAD)

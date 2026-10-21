@@ -191,7 +191,7 @@ private fun CalculatorSections(calc: CalcState, onOpen: () -> Unit) {
                     StaticMath(listOfNotNull(o.exact), 16f)
                     Text("  ≈ " + Format.number(o.value), color = c.accent, style = MaterialTheme.typography.bodyLarge)
                 }
-                else Text(outcomeText(o), color = c.accent, style = MaterialTheme.typography.bodyLarge)
+                else Text(mathLabel(outcomeText(o)), color = c.accent, style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(color = c.caseBorder.copy(alpha = 0.25f))
         }
@@ -242,20 +242,31 @@ private fun FormulaSections(settings: AppSettings, onFormula: (Formula) -> Unit)
     val lang = settings.language.code
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         item { Text(stringResource(R.string.formulas_hint), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 8.dp)) }
-        FormulaCategory.entries.forEach { cat ->
+        FormulaCategory.entries.forEachIndexed { i, cat ->
+            if (i == 0 || FormulaCategory.entries[i - 1].area != cat.area) item {
+                Text(
+                    cat.area.title.get(lang).uppercase(),
+                    color = c.accent,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = if (i == 0) 4.dp else 18.dp, bottom = 2.dp),
+                )
+            }
             item { SectionTitle(cat.title.get(lang)) }
             items(Formulas.byCategory(cat)) { f ->
                 Column(
                     Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp)).background(c.keyNumber)
-                        .clickable { onFormula(f) }.padding(10.dp),
+                        .clickable { onFormula(f) }.padding(horizontal = 12.dp, vertical = 10.dp),
                 ) {
                     Text(f.name.get(lang), style = MaterialTheme.typography.titleSmall)
-                    Text(f.preview, style = mathStyle(LocalMathFont.current, 17f, c.accent, italic = true))
+                    val rows = remember(f.id, settings.units) { f.build(settings.units) }
+                    Box(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
+                        StaticMath(rows, 19f, labels = true)
+                    }
                     if (f.vars.isNotEmpty()) {
                         val units = f.vars.joinToString("   ") { v ->
                             "${v.label} [${if (settings.units == UnitSystem.METRIC) v.metric else v.imperial}]"
                         }
-                        Text(units, color = c.muted, style = MaterialTheme.typography.bodySmall)
+                        Text(mathLabel(units), color = c.muted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

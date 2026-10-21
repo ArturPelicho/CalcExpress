@@ -392,13 +392,13 @@ private fun ResultLine(state: CalcState) {
                 Text("  ≈ " + Format.number(o.value), style = mathStyle(font, 22f, c.accent))
             }
             o != null -> Text(
-                outcomeText(o),
+                mathLabel(outcomeText(o)),
                 style = mathStyle(font, if (o is Outcome.Error) 17f else 30f, if (o is Outcome.Error) c.error else c.accent),
                 textAlign = TextAlign.End,
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
             )
             state.preview != null -> Text(
-                outcomeText(state.preview!!),
+                mathLabel(outcomeText(state.preview!!)),
                 style = mathStyle(font, 20f, c.muted),
                 textAlign = TextAlign.End,
             )
