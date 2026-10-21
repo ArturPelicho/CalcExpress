@@ -16,4 +16,4 @@ CalcExpress does not collect, store or share any personal data.
 Permissions (GitHub version): `INTERNET` (update check/download) and `REQUEST_INSTALL_PACKAGES`
 (lets you install the downloaded update; Android always asks you to confirm).
 
-Contact: open an issue at https://github.com/ArturPelicho/calcexpress/issues
+Contact: open an issue at https://github.com/ArturPelicho/CalcExpress/issues

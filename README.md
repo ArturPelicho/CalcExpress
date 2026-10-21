@@ -5,7 +5,7 @@ no nested menus, real maths layout, equations and systems solved straight from t
 
 ## Install
 
-Download the latest `CalcExpress-x.y.z.apk` from [Releases](https://github.com/ArturPelicho/calcexpress/releases/latest)
+Download the latest `CalcExpress-x.y.z.apk` from [Releases](https://github.com/ArturPelicho/CalcExpress/releases/latest)
 and open it on your phone (allow "install unknown apps" for your browser the first time).
 After that, the app checks for updates itself: **Settings → About the app → Check for updates**,
 or the banner that appears on the calculator when a new version is out.

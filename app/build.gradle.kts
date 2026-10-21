@@ -23,7 +23,7 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
-        buildConfigField("String", "GITHUB_REPO", "\"ArturPelicho/calcexpress\"")
+        buildConfigField("String", "GITHUB_REPO", "\"ArturPelicho/CalcExpress\"")
     }
 
     signingConfigs {
