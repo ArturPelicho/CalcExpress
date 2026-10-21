@@ -29,7 +29,13 @@ import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,7 +65,42 @@ data class MathCtx(
     val colors: CalcColors,
     val font: FontFamily,
     val caretAlpha: Float,
+    /** Draw empty labelled boxes as their label (formula previews). */
+    val labels: Boolean = false,
 )
+
+private const val SUBS = "₀₁₂₃₄₅₆₇₈₉ₐₑₒₓₕₖₗₘₙₚₛₜᵢⱼᵣᵤᵥ₊₋"
+private const val SUBS_PLAIN = "0123456789aeoxhklmnpstijruv+−"
+private const val SUPS = "⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺"
+private const val SUPS_PLAIN = "0123456789−+"
+
+/**
+ * Text with real subscripts ("σ_y", "x₁") and superscripts ("m⁴"), drawn as small shifted
+ * characters: the math font has no glyphs for most Unicode sub/superscripts.
+ */
+fun mathLabel(text: String): AnnotatedString = buildAnnotatedString {
+    val sub = SpanStyle(fontSize = 0.68.em, baselineShift = BaselineShift(-0.22f))
+    val sup = SpanStyle(fontSize = 0.68.em, baselineShift = BaselineShift(0.5f))
+    var i = 0
+    while (i < text.length) {
+        val ch = text[i]
+        val si = SUBS.indexOf(ch)
+        val pi = SUPS.indexOf(ch)
+        when {
+            ch == '_' && i + 1 < text.length && text[i + 1].isLetterOrDigit() -> {
+                var j = i + 1
+                while (j < text.length && text[j].isLetterOrDigit()) j++
+                withStyle(sub) { append(text, i + 1, j) }
+                i = j
+                continue
+            }
+            si >= 0 -> withStyle(sub) { append(SUBS_PLAIN[si]) }
+            pi >= 0 -> withStyle(sup) { append(SUPS_PLAIN[pi]) }
+            else -> append(ch)
+        }
+        i++
+    }
+}
 
 @Composable
 fun rememberCaretAlpha(): Float {
@@ -157,7 +198,7 @@ private fun CaseBox(label: String?, size: Float, ctx: MathCtx, active: Boolean, 
                 drawRoundRect(color, cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()), style = stroke)
             }
             if (label != null) {
-                Text(label, style = mathStyle(ctx.font, size * 0.7f, ctx.colors.muted, italic = true))
+                Text(mathLabel(label), style = mathStyle(ctx.font, size * 0.7f, ctx.colors.muted, italic = true))
             }
         },
     ) { ms, _ ->
@@ -217,7 +258,10 @@ private fun NodeView(node: Node, row: MathRow, index: Int, ctx: MathCtx, size: F
         }
         is Slot -> {
             val editor = ctx.editor
-            if (node.content.isEmpty) {
+            val label = node.label
+            if (node.content.isEmpty && ctx.labels && label != null) {
+                Text(mathLabel(label), style = mathStyle(ctx.font, size, ctx.colors.text, italic = true), modifier = Modifier.padding(horizontal = 0.5.dp))
+            } else if (node.content.isEmpty) {
                 val active = editor != null && editor.caret.row === node.content
                 CaseBox(node.label, size, ctx, active, onTap = { editor?.setCaret(node.content, 0) })
             } else {
@@ -241,7 +285,7 @@ private fun SymView(s: Sym, ctx: MathCtx, size: Float, modifier: Modifier) {
         else -> Triple(s.text, false, 0f)
     }
     Text(
-        text,
+        mathLabel(text),
         style = mathStyle(ctx.font, size, ctx.colors.text, italic),
         modifier = modifier.padding(horizontal = padH.dp),
     )
@@ -493,8 +537,8 @@ private fun IntegralView(n: Integral, ctx: MathCtx, size: Float) {
 
 /** Read-only rendering of formula previews and history. */
 @Composable
-fun StaticMath(rows: List<MathRow>, size: Float, modifier: Modifier = Modifier) {
-    val ctx = MathCtx(null, 0, LocalCalcColors.current, LocalMathFont.current, 0f)
+fun StaticMath(rows: List<MathRow>, size: Float, modifier: Modifier = Modifier, labels: Boolean = false) {
+    val ctx = MathCtx(null, 0, LocalCalcColors.current, LocalMathFont.current, 0f, labels)
     Box(modifier, contentAlignment = Alignment.CenterStart) {
         androidx.compose.foundation.layout.Column {
             rows.forEach { MathRowView(it, ctx, size) }
