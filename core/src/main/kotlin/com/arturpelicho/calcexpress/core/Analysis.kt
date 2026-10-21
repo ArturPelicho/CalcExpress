@@ -81,6 +81,7 @@ object Analysis {
             } else Outcome.Parametric(sol)
         }
         if (unknowns.size > residuals.size) {
+            eliminate(residuals, unknowns, angle)?.let { return it }
             throw CalcException(CalcException.Reason.UNDERDETERMINED, Linear.byPriority(unknowns).joinToString(", "))
         }
 
@@ -102,6 +103,72 @@ object Analysis {
         val c = ctx.with(unknowns.indices.associate { unknowns[it] to sol[it] })
         if (residuals.drop(n).any { kotlin.math.abs(it.eval(c)) > 1e-7 }) throw CalcException(CalcException.Reason.NO_SOLUTION)
         return Outcome.Solutions(unknowns.indices.map { unknowns[it] to listOf(clean(sol[it])) })
+    }
+
+    /**
+     * Too few (non-linear) equations: isolates the unknowns in priority order (x, y, z, α, …),
+     * substituting each into the remaining equations. One row per unknown and branch.
+     */
+    private fun eliminate(residuals: List<Expr>, unknowns: List<String>, angle: AngleUnit): Outcome? {
+        val eqs = try { residuals.map { Cas.fromExpr(it, angle) } } catch (e: Unsupported) { return null }
+        val calc = Calculus(angle)
+        val order = Linear.byPriority(unknowns)
+        val branches = solveSymbolic(eqs, order, calc, 0) ?: return null
+        if (branches.isEmpty()) return null
+        val rows = mutableListOf<MathRow>()
+        branches.take(MAX_BRANCHES).forEachIndexed { i, m ->
+            for (v in order) {
+                val sol = m[v] ?: continue
+                val name = if (branches.size > 1) v + subscript(i + 1) else v
+                rows += MathRow(mutableListOf<Node>(Sym.variable(name), Sym.equals())).also { it.items += Cas.toRow(sol).items }
+            }
+        }
+        return Outcome.Symbolic(rows)
+    }
+
+    private const val MAX_BRANCHES = 4
+
+    private fun subscript(n: Int) = n.toString().map { "₀₁₂₃₄₅₆₇₈₉"[it - '0'] }.joinToString("")
+
+    /**
+     * All solution branches as maps unknown → expression in the remaining (free) unknowns.
+     * Among the possible eliminations, keeps the one that solves the highest-priority unknowns.
+     */
+    private fun solveSymbolic(eqs: List<S>, order: List<String>, calc: Calculus, depth: Int): List<Map<String, S>>? {
+        if (eqs.isEmpty()) return listOf(emptyMap())
+        if (depth > 4) return null
+        var best: List<Map<String, S>>? = null
+        var bestScore: List<Int>? = null
+        for (v in order) {
+            for (eq in eqs) {
+                if (Cas.freeOf(eq, v)) continue
+                val sols = calc.solveFor(eq, v) ?: continue
+                val results = mutableListOf<Map<String, S>>()
+                for (sol in sols) {
+                    val rest = (eqs - eq).map { Cas.substitute(it, v, sol) }.filter { it != Cas.ZERO }
+                    if (rest.any { it is S.N }) continue // inconsistent branch
+                    val sub = solveSymbolic(rest, order - v, calc, depth + 1) ?: continue
+                    for (m in sub) {
+                        var full = sol
+                        for ((name, value) in m) full = Cas.substitute(full, name, value)
+                        results += m + (v to full)
+                    }
+                }
+                if (results.isEmpty()) continue
+                val score = results.first().keys.map { order.indexOf(it) }.sorted()
+                if (bestScore == null || compareScores(score, bestScore) < 0) {
+                    best = results.take(MAX_BRANCHES); bestScore = score
+                }
+            }
+            // Solving for the first unknown that works is already optimal for it.
+            if (best != null && bestScore!!.first() == order.indexOf(v)) return best
+        }
+        return best
+    }
+
+    private fun compareScores(a: List<Int>, b: List<Int>): Int {
+        for (i in 0 until minOf(a.size, b.size)) if (a[i] != b[i]) return a[i] - b[i]
+        return b.size - a.size
     }
 
     private fun symbolic(e: Expr, angle: AngleUnit): S =

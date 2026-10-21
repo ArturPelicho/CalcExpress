@@ -806,7 +806,9 @@ class Calculus(private val angle: AngleUnit) {
         return ok.ifEmpty { null }
     }
 
-    private fun isolate(r: S, v: String): List<S>? = with(Cas) {
+    private fun isolate(r0: S, v: String): List<S>? = with(Cas) {
+        // Clear negative powers of v: z/y + y − 3 = 0 → z + y² − 3y = 0.
+        val r = negativePower(r0, v)?.let { expand(mul(r0, pow(S.V(v), num(it)))) } ?: r0
         polynomial(r, v)?.let { p ->
             val deg = p.keys.maxOrNull() ?: return null
             val a = p[2] ?: ZERO; val b = p[1] ?: ZERO; val c = p[0] ?: ZERO
@@ -869,6 +871,17 @@ class Calculus(private val angle: AngleUnit) {
             }
         }
         null
+    }
+
+    /** The largest k with a v^(−k) factor among the terms of [r], or null. */
+    private fun negativePower(r: S, v: String): Double? {
+        val terms = if (r is S.Add) r.terms else listOf(r)
+        var k = 0.0
+        for (t in terms) {
+            val fs = if (t is S.Mul) t.factors else listOf(t)
+            for (f in fs) if (f is S.Pow && f.base == S.V(v) && f.exp is S.N && (f.exp as S.N).v < 0) k = max(k, -(f.exp as S.N).v)
+        }
+        return if (k > 0 && k == floor(k)) k else null
     }
 
     private fun checkSolution(r: S, v: String, sol: S): Boolean {

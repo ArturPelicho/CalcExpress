@@ -109,10 +109,37 @@ class CalculatorTest {
     }
 
     @Test fun underdetermined() {
+        // x·e^x = y cannot be isolated for x or y… but y can: y is alone. Use x + sin(x)·y = sin(y)·x instead.
+        val e = Editor(); e.type("x+y")
+        e.function(Fn.SIN); e.type("x"); e.moveRight(); e.type("=x")
+        e.function(Fn.SIN); e.type("y")
+        val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
+        assertIs<Outcome.Error>(o, "got $o")
+        assertEquals(CalcException.Reason.UNDERDETERMINED, o.reason)
+    }
+
+    @Test fun nonLinearUnderdeterminedIsolatesX() {
+        // x·x·y = 3 → x = ±√(3/y)
         val e = Editor(); e.type("x*x*y=3")
         val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
-        assertIs<Outcome.Error>(o)
-        assertEquals(CalcException.Reason.UNDERDETERMINED, o.reason)
+        assertIs<Outcome.Symbolic>(o, "got $o")
+        assertEquals(2, o.rows.size, o.rows.toString())
+        assertTrue(o.rows[0].toString().startsWith("x₁="), o.rows.toString())
+        // xy = 4 → x = 4/y
+        val f = Editor(); f.type("xy=4")
+        val p = Analysis.evaluate(f.lines, AngleUnit.RAD) as Outcome.Symbolic
+        assertEquals("x=frac(4,y)", p.rows.single().toString())
+    }
+
+    @Test fun nonLinearSystemWithFreeParameter() {
+        // x·y = z, x + y = 3  → both x and y in terms of z
+        val e = Editor(); e.type("xy=z")
+        e.addEquation()
+        e.type("x+y"); e.moveRight(); e.moveRight(); e.moveRight(); e.type("3")
+        val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
+        assertIs<Outcome.Symbolic>(o, "got $o")
+        assertTrue(o.rows.any { it.toString().startsWith("y") }, o.rows.toString())
+        assertTrue(o.rows.none { r -> r.toString().substringAfter("=").contains("x") || r.toString().substringAfter("=").contains("y") }, o.rows.toString())
     }
 
     @Test fun linearUnderdeterminedSolvesForXInTermsOfY() {
