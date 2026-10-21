@@ -375,7 +375,7 @@ private fun ResultLine(state: CalcState) {
             o is Outcome.MatrixValue -> StaticMath(listOf(matrixRow(o.matrix)), 24f, Modifier.horizontalScroll(rememberScrollState()))
             o is Outcome.Symbolic -> StaticMath(o.rows, 24f, Modifier.horizontalScroll(rememberScrollState()))
             o is Outcome.Value && o.exact != null -> Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
-                StaticMath(listOf(o.exact), 26f)
+                StaticMath(listOfNotNull(o.exact), 26f)
                 Text("  ≈ " + Format.number(o.value), style = mathStyle(font, 22f, c.accent))
             }
             o != null -> Text(
