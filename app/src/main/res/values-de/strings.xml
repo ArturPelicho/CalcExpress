@@ -64,6 +64,7 @@
     <string name="matrix_col">Spalte hinzufügen (halten zum Entfernen)</string>
     <string name="err_no_antiderivative">Keine elementare Stammfunktion gefunden</string>
     <string name="result_numeric_ode">Numerische Lösung %1$s(%2$s): siehe Graph</string>
+    <string name="calc_history_clear">Löschen</string>
     <string name="result_true">Wahr</string>
     <string name="result_false">Falsch</string>
     <string name="result_function">Funktion von %1$s</string>

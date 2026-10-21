@@ -64,6 +64,7 @@
     <string name="matrix_col">Aggiungi colonna (tieni premuto per rimuovere)</string>
     <string name="err_no_antiderivative">Nessuna primitiva elementare trovata</string>
     <string name="result_numeric_ode">Soluzione numerica %1$s(%2$s): vedi il grafico</string>
+    <string name="calc_history_clear">Cancella</string>
     <string name="result_true">Vero</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Funzione di %1$s</string>

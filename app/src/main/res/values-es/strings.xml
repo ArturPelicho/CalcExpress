@@ -64,6 +64,7 @@
     <string name="matrix_col">Añadir columna (mantén para quitar)</string>
     <string name="err_no_antiderivative">No se encontró primitiva elemental</string>
     <string name="result_numeric_ode">Solución numérica %1$s(%2$s): mira el gráfico</string>
+    <string name="calc_history_clear">Borrar</string>
     <string name="result_true">Verdadero</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Función de %1$s</string>

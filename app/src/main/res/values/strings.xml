@@ -65,6 +65,7 @@
     <string name="matrix_col">Add matrix column (hold to remove)</string>
     <string name="err_no_antiderivative">No elementary antiderivative found</string>
     <string name="result_numeric_ode">Numerical solution %1$s(%2$s): see the graph</string>
+    <string name="calc_history_clear">Clear</string>
     <string name="result_true">True</string>
     <string name="result_false">False</string>
     <string name="result_function">Function of %1$s</string>
