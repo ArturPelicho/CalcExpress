@@ -1,6 +1,7 @@
 package com.arturpelicho.calcexpress.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,7 +52,7 @@ private fun initialViewport(spec: GraphSpec): Viewport {
     }
     val xs = (0..200).map { x0 + (x1 - x0) * it / 200 }
     val fs = when (spec) {
-        is GraphSpec.Plot -> listOf(spec.f)
+        is GraphSpec.Plot -> listOf(spec.f) + spec.extra
         is GraphSpec.Area -> listOf(spec.f)
         is GraphSpec.Region -> listOf(spec.lo, spec.hi)
     }
@@ -70,9 +71,18 @@ private fun niceStep(range: Double): Double {
 fun GraphView(spec: GraphSpec, modifier: Modifier = Modifier) {
     val c = LocalCalcColors.current
     var vp by remember(spec) { mutableStateOf(initialViewport(spec)) }
+    // Tapping the graph shows the values of every curve at that x.
+    var traceX by remember(spec) { mutableStateOf<Double?>(null) }
+    val palette = listOf(c.graphLine, c.highlight, c.accent, c.error)
     Canvas(
         // Clip so curves that leave the viewport never draw over the rest of the screen.
         modifier.clipToBounds().pointerInput(spec) {
+            detectTapGestures { pos ->
+                val v = vp
+                val x = v.x0 + pos.x / size.width * (v.x1 - v.x0)
+                traceX = if (traceX == null) x else null
+            }
+        }.pointerInput(spec) {
             detectTransformGestures { centroid, pan, zoom, _ ->
                 val v = vp
                 val w = size.width.toDouble(); val h = size.height.toDouble()
@@ -94,8 +104,23 @@ fun GraphView(spec: GraphSpec, modifier: Modifier = Modifier) {
 
         when (spec) {
             is GraphSpec.Plot -> {
-                drawCurve(spec.f, v, c.graphLine, ::px, ::py)
+                val fs = listOf(spec.f) + spec.extra
+                fs.forEachIndexed { i, f -> drawCurve(f, v, palette[i % palette.size], ::px, ::py) }
                 for (m in spec.marks) drawCircle(c.highlight, 5.dp.toPx(), Offset(px(m), py(0.0)))
+                traceX?.let { tx ->
+                    drawLine(c.muted, Offset(px(tx), 0f), Offset(px(tx), size.height), 1.dp.toPx())
+                    val labelSize = 13.dp.toPx()
+                    var y = labelSize + 6.dp.toPx()
+                    drawText("${spec.variable} = ${Format.number(tx, 6)}", 8.dp.toPx(), y, c.text.toArgb(), labelSize)
+                    fs.forEachIndexed { i, f ->
+                        val fy = safe(f, tx)
+                        val col = palette[i % palette.size]
+                        if (fy.isFinite()) drawCircle(col, 4.5.dp.toPx(), Offset(px(tx), py(fy)))
+                        y += labelSize + 4.dp.toPx()
+                        val name = if (fs.size > 1) "y${"₀₁₂₃₄₅₆₇₈₉"[(i + 1) % 10]}" else "y"
+                        drawText("$name = ${if (fy.isFinite()) Format.number(fy, 6) else "—"}", 8.dp.toPx(), y, col.toArgb(), labelSize)
+                    }
+                }
             }
             is GraphSpec.Area -> {
                 val a = minOf(spec.a, spec.b); val b = maxOf(spec.a, spec.b)

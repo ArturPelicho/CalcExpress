@@ -9,7 +9,11 @@ sealed class Outcome {
     data class Value(val value: Double, val exact: MathRow? = null) : Outcome()
     data class MatrixValue(val matrix: com.arturpelicho.calcexpress.core.Value.Mat) : Outcome()
     /** One entry per unknown; several values when an equation has several roots. */
-    data class Solutions(val values: List<Pair<String, List<Double>>>) : Outcome()
+    data class Solutions(
+        val values: List<Pair<String, List<Double>>>,
+        /** Non-real roots (re, im) of a single polynomial equation, listed after the real ones. */
+        val complex: List<Pair<Double, Double>> = emptyList(),
+    ) : Outcome()
     /** Fewer equations than unknowns: the first unknowns (by priority) in terms of the rest. */
     data class Parametric(val values: List<Pair<String, Affine>>) : Outcome()
     /** Symbolic results, one row each, already starting with "=" or "x =" (e.g. antiderivatives). */
@@ -24,7 +28,11 @@ sealed class Outcome {
 
 /** What can be drawn for the current content. */
 sealed class GraphSpec {
-    data class Plot(val variable: String, val f: (Double) -> Double, val marks: List<Double> = emptyList()) : GraphSpec()
+    /** [f] plus any [extra] functions drawn on the same axes (one per line). */
+    data class Plot(
+        val variable: String, val f: (Double) -> Double, val marks: List<Double> = emptyList(),
+        val extra: List<(Double) -> Double> = emptyList(),
+    ) : GraphSpec()
     data class Area(val variable: String, val f: (Double) -> Double, val a: Double, val b: Double) : GraphSpec()
     /** Region of a double integral: outer ∈ [a,b], inner between lo(outer) and hi(outer). */
     data class Region(
@@ -51,7 +59,13 @@ object Analysis {
         val filled = Parser.filledCases(lines)
 
         if (lines.none(::isEquation)) {
-            if (lines.size > 1) throw CalcException(CalcException.Reason.NOT_EQUATION)
+            if (lines.size > 1) {
+                // Several functions of the same variable: plotted together.
+                val free = lines.map { Parser.parse(it, filled).freeVariables() }
+                val all = free.flatten().toSet()
+                if (all.size == 1) return Outcome.Function(all.first())
+                throw CalcException(CalcException.Reason.NOT_EQUATION)
+            }
             val e = Parser.parse(lines[0], filled)
             if (Expr.hasIndefinite(e)) return Outcome.Symbolic(listOf(antiderivativeRow(symbolic(e, angle))))
             val free = e.freeVariables()
@@ -106,8 +120,9 @@ object Analysis {
             val v = unknowns[0]
             val r = residuals[0]
             val roots = Numerics.findRoots({ x -> r.eval(ctx.with(v, x)) })
-            if (roots.isEmpty()) throw CalcException(CalcException.Reason.NO_SOLUTION)
-            return Outcome.Solutions(listOf(v to roots))
+            val complex = complexRoots(r, v, angle)
+            if (roots.isEmpty() && complex.isEmpty()) throw CalcException(CalcException.Reason.NO_SOLUTION)
+            return Outcome.Solutions(listOf(v to roots), complex)
         }
 
         // Square (or over-determined, using the first n) system.
@@ -188,6 +203,16 @@ object Analysis {
         return b.size - a.size
     }
 
+    /** Non-real roots of [r] when it is a polynomial in [v] with numeric coefficients. */
+    private fun complexRoots(r: Expr, v: String, angle: AngleUnit): List<Pair<Double, Double>> {
+        val c = try { Cas.numericPolynomial(Cas.fromExpr(r, angle), v) } catch (e: Unsupported) { null } ?: return emptyList()
+        if (c.size < 3) return emptyList()
+        return Numerics.polynomialRoots(c)
+            .filter { abs(it.second) > 1e-7 * max(1.0, abs(it.first)) }
+            .map { (re, im) -> clean(re) to clean(im) }
+            .sortedWith(compareBy({ it.first }, { -it.second }))
+    }
+
     /** "= closed form" when it is short, matches [v] and says more than the input or the decimal. */
     private fun exactRow(e: Expr, input: MathRow, v: Double, angle: AngleUnit): MathRow? {
         val s = try { Cas.fromExpr(e, angle) } catch (x: Unsupported) { return null } catch (x: CalcException) { return null }
@@ -247,6 +272,15 @@ object Analysis {
                 val f = Ode.solve(p, angle).f ?: return null
                 return GraphSpec.Plot(p.x, f)
             }
+        }
+        if (lines.size > 1 && lines.none(::isEquation)) {
+            val es = lines.map { Parser.parse(it, Parser.filledCases(lines)) }
+            val all = es.flatMap { it.freeVariables() }.toSet()
+            if (all.size != 1) return null
+            val v = all.first()
+            val c = EvalContext(angle)
+            val fs = es.map { e -> { x: Double -> e.eval(c.with(v, x)) } }
+            return GraphSpec.Plot(v, fs[0], extra = fs.drop(1))
         }
         if (lines.size != 1) return null
         val line = lines[0]
