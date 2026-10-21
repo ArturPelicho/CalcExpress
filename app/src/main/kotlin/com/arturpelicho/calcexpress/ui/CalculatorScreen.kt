@@ -35,6 +35,7 @@ import com.arturpelicho.calcexpress.core.Fn
 import com.arturpelicho.calcexpress.core.Format
 import com.arturpelicho.calcexpress.core.GraphSpec
 import com.arturpelicho.calcexpress.core.Integral
+import com.arturpelicho.calcexpress.core.MathCodec
 import com.arturpelicho.calcexpress.core.MathRow
 import com.arturpelicho.calcexpress.core.MatrixNode
 import com.arturpelicho.calcexpress.core.Outcome
@@ -43,12 +44,17 @@ import com.arturpelicho.calcexpress.core.SymKind
 import com.arturpelicho.calcexpress.core.Value
 import com.arturpelicho.calcexpress.core.allRows
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+import java.util.concurrent.Executors
 
-data class HistoryEntry(val lines: List<MathRow>, val outcome: Outcome)
+data class HistoryEntry(val lines: List<MathRow>, val outcome: Outcome, val angle: AngleUnit)
 
 /** State of the calculator screen; survives navigation between areas. */
 class CalcState : KeyboardActions {
@@ -73,6 +79,42 @@ class CalcState : KeyboardActions {
     var angle: AngleUnit = AngleUnit.DEG
     var scope: CoroutineScope? = null
     private var job: Job? = null
+
+    /** History file I/O runs on one background thread, in order. */
+    private val io = CoroutineScope(SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher())
+    private var historyFile: File? = null
+
+    /** Loads the saved history (one "ANGLE<tab>encoded lines" per line) and re-evaluates it. */
+    fun restoreHistory(file: File) {
+        if (historyFile != null) return
+        historyFile = file
+        io.launch {
+            val saved = try { if (file.exists()) file.readLines() else emptyList() } catch (e: IOException) { emptyList() }
+            val entries = saved.take(MAX_HISTORY).mapNotNull { line ->
+                val tab = line.indexOf('\t')
+                if (tab < 0) return@mapNotNull null
+                val a = AngleUnit.entries.firstOrNull { it.name == line.substring(0, tab) } ?: return@mapNotNull null
+                val lines = MathCodec.decode(line.substring(tab + 1)) ?: return@mapNotNull null
+                val o = Analysis.evaluate(lines, a)
+                if (o is Outcome.Error) null else HistoryEntry(lines, o, a)
+            }
+            withContext(Dispatchers.Main) {
+                history.addAll(entries)
+                while (history.size > MAX_HISTORY) history.removeAt(history.size - 1)
+            }
+        }
+    }
+
+    private fun saveHistory() {
+        val file = historyFile ?: return
+        val text = history.joinToString("\n") { "${it.angle.name}\t${MathCodec.encode(it.lines)}" }
+        io.launch { try { file.writeText(text) } catch (e: IOException) { } }
+    }
+
+    fun clearHistory() {
+        history.clear()
+        saveHistory()
+    }
 
     private fun changed(clearOutcome: Boolean = true) {
         version = editor.version
@@ -185,13 +227,16 @@ class CalcState : KeyboardActions {
                 else -> {}
             }
             if (o !is Outcome.Error) {
-                history.add(0, HistoryEntry(lines, o))
-                if (history.size > 50) history.removeAt(history.size - 1)
+                history.add(0, HistoryEntry(lines, o, a))
+                if (history.size > MAX_HISTORY) history.removeAt(history.size - 1)
+                saveHistory()
             }
-            if (o is Outcome.Function && g != null) showGraph = true
+            if ((o is Outcome.Function || o is Outcome.NumericOde) && g != null) showGraph = true
         }
     }
 }
+
+private const val MAX_HISTORY = 50
 
 /** Result as text: "= v" for a plain value, one "name = v" line per unknown otherwise. */
 @Composable
@@ -201,6 +246,7 @@ fun outcomeText(o: Outcome): String = when (o) {
         (0 until o.matrix.cols).joinToString("  ") { col -> Format.number(o.matrix.data[r * o.matrix.cols + col]) }
     }
     is Outcome.Symbolic -> o.rows.joinToString("\n") { it.toString() }
+    is Outcome.NumericOde -> stringResource(R.string.result_numeric_ode, o.y, o.x)
     is Outcome.Truth -> stringResource(if (o.holds) R.string.result_true else R.string.result_false)
     is Outcome.Function -> stringResource(R.string.result_function, o.variable)
     is Outcome.Solutions -> o.values.joinToString("\n") { (name, vals) ->

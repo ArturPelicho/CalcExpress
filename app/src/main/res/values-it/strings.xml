@@ -10,7 +10,7 @@
     <string name="calc_history">Cronologia</string>
     <string name="calc_history_empty">Nessun calcolo per ora.</string>
     <string name="calc_tips_title">Suggerimenti</string>
-    <string name="calc_tips">• ^ tocco breve: quadrato; tocco lungo: inserisci l’esponente (evidenziato), di nuovo lungo per uscire.\n• Una lettera crea una variabile; =[] trasforma la riga in un’equazione e = la risolve.\n• ⊕= aggiunge un’altra equazione per risolvere un sistema.\n• Tocca una casella per compilarla; ⇥ passa alla successiva vuota.\n• Le parentesi cambiano ( ) → [ ] → { } automaticamente con l’annidamento.\n• Tocco lungo su sin/cos/tan per l’inversa, su √ per la radice n-esima, su una lettera per la maiuscola.\n• ∫ senza limiti dà la primitiva (+ C).</string>
+    <string name="calc_tips">• ^ tocco breve: quadrato; tocco lungo: inserisci l’esponente (evidenziato), di nuovo lungo per uscire.\n• Una lettera crea una variabile; =[] trasforma la riga in un’equazione e = la risolve.\n• ⊕= aggiunge un’altra equazione per risolvere un sistema.\n• Tocca una casella per compilarla; ⇥ passa alla successiva vuota.\n• Le parentesi cambiano ( ) → [ ] → { } automaticamente con l’annidamento.\n• Tocco lungo su sin/cos/tan per l’inversa, su √ per la radice n-esima, su una lettera per la maiuscola.\n• ∫ senza limiti dà la primitiva (+ C).\n• d/dx(y) = f(x, y) è un’equazione differenziale: aggiungi x = x₀, y = y₀ (e d/dx(y) = y₁) per le condizioni iniziali.</string>
     <string name="settings_appearance">Aspetto</string>
     <string name="settings_preferences">Preferenze</string>
     <string name="settings_about">Informazioni</string>
@@ -63,6 +63,8 @@
     <string name="matrix_row">Aggiungi riga (tieni premuto per rimuovere)</string>
     <string name="matrix_col">Aggiungi colonna (tieni premuto per rimuovere)</string>
     <string name="err_no_antiderivative">Nessuna primitiva elementare trovata</string>
+    <string name="result_numeric_ode">Soluzione numerica %1$s(%2$s): vedi il grafico</string>
+    <string name="calc_history_clear">Cancella</string>
     <string name="result_true">Vero</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Funzione di %1$s</string>

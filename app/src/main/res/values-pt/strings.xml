@@ -10,7 +10,7 @@
     <string name="calc_history">Histórico</string>
     <string name="calc_history_empty">Ainda sem cálculos.</string>
     <string name="calc_tips_title">Dicas rápidas</string>
-    <string name="calc_tips">• ^ toque curto eleva ao quadrado; toque longo entra no expoente (contornado), novo toque longo sai.\n• Escrever uma letra cria uma variável; =[] torna a linha numa equação e = resolve-a.\n• ⊕= adiciona outra equação para resolver um sistema.\n• Toca numa caixa (case) para a preencher; ⇥ salta para a próxima caixa vazia.\n• Os parênteses mudam ( ) → [ ] → { } automaticamente com o nível.\n• Toque longo em sin/cos/tan dá a inversa, em √ a raiz de índice n, numa letra a maiúscula.\n• ∫ com os limites vazios dá a primitiva (+ C).</string>
+    <string name="calc_tips">• ^ toque curto eleva ao quadrado; toque longo entra no expoente (contornado), novo toque longo sai.\n• Escrever uma letra cria uma variável; =[] torna a linha numa equação e = resolve-a.\n• ⊕= adiciona outra equação para resolver um sistema.\n• Toca numa caixa (case) para a preencher; ⇥ salta para a próxima caixa vazia.\n• Os parênteses mudam ( ) → [ ] → { } automaticamente com o nível.\n• Toque longo em sin/cos/tan dá a inversa, em √ a raiz de índice n, numa letra a maiúscula.\n• ∫ com os limites vazios dá a primitiva (+ C).\n• d/dx(y) = f(x, y) é uma equação diferencial: junta linhas x = x₀, y = y₀ (e d/dx(y) = y₁) para as condições iniciais.</string>
     <string name="settings_appearance">Aparência</string>
     <string name="settings_preferences">Preferências</string>
     <string name="settings_about">Sobre a app</string>
@@ -63,6 +63,8 @@
     <string name="matrix_row">Adicionar linha à matriz (mantém para remover)</string>
     <string name="matrix_col">Adicionar coluna à matriz (mantém para remover)</string>
     <string name="err_no_antiderivative">Não encontrei primitiva elementar</string>
+    <string name="result_numeric_ode">Solução numérica %1$s(%2$s): vê o gráfico</string>
+    <string name="calc_history_clear">Limpar</string>
     <string name="result_true">Verdadeiro</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Função de %1$s</string>

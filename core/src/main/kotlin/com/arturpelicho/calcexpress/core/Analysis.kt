@@ -10,6 +10,8 @@ sealed class Outcome {
     data class Parametric(val values: List<Pair<String, Affine>>) : Outcome()
     /** Symbolic results, one row each, already starting with "=" or "x =" (e.g. antiderivatives). */
     data class Symbolic(val rows: List<MathRow>) : Outcome()
+    /** A differential equation solved only numerically: see the graph of [y]([x]). */
+    data class NumericOde(val y: String, val x: String) : Outcome()
     data class Truth(val holds: Boolean) : Outcome()
     /** An expression with one free variable: a function that can be plotted. */
     data class Function(val variable: String) : Outcome()
@@ -57,6 +59,12 @@ object Analysis {
                 1 -> Outcome.Function(free.first())
                 else -> throw CalcException(CalcException.Reason.UNKNOWN_VARIABLE, free.sorted().joinToString(", "))
             }
+        }
+
+        val parsed = lines.map { Parser.parseLine(it, filled) }
+        Ode.detect(parsed, angle)?.let { p ->
+            val sol = Ode.solve(p, angle)
+            return if (sol.rows.isEmpty()) Outcome.NumericOde(p.y, p.x) else Outcome.Symbolic(sol.rows)
         }
 
         // Equations: each "a = b = c" contributes a−b and b−c.
@@ -209,6 +217,13 @@ object Analysis {
     } catch (e: CalcException) { null }
 
     private fun graphOrThrow(lines: List<MathRow>, angle: AngleUnit): GraphSpec? {
+        if (lines.isNotEmpty() && lines.all(::isEquation)) {
+            val parsed = lines.map { Parser.parseLine(it, Parser.filledCases(lines)) }
+            Ode.detect(parsed, angle)?.let { p ->
+                val f = Ode.solve(p, angle).f ?: return null
+                return GraphSpec.Plot(p.x, f)
+            }
+        }
         if (lines.size != 1) return null
         val line = lines[0]
         val ctx = EvalContext(angle)

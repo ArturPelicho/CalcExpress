@@ -66,6 +66,7 @@ import com.arturpelicho.calcexpress.core.Formulas
 import com.arturpelicho.calcexpress.core.MeasureUnit
 import com.arturpelicho.calcexpress.core.Outcome
 import com.arturpelicho.calcexpress.core.UnitCategory
+import com.arturpelicho.calcexpress.core.UnitNames
 import com.arturpelicho.calcexpress.core.UnitSystem
 import com.arturpelicho.calcexpress.core.Units
 import com.arturpelicho.calcexpress.update.UpdateStatus
@@ -172,7 +173,10 @@ private fun CalculatorSections(calc: CalcState, onOpen: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         item {
             Button(onClick = onOpen, modifier = Modifier.padding(top = 8.dp)) { Text(stringResource(R.string.calc_open)) }
-            SectionTitle(stringResource(R.string.calc_history))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { SectionTitle(stringResource(R.string.calc_history)) }
+                if (calc.history.isNotEmpty()) TextButton(onClick = { calc.clearHistory() }) { Text(stringResource(R.string.calc_history_clear)) }
+            }
             if (calc.history.isEmpty()) Text(stringResource(R.string.calc_history_empty), color = c.muted)
         }
         items(calc.history) { h ->
@@ -278,7 +282,7 @@ fun ConverterPage(category: UnitCategory, settings: AppSettings, onBack: () -> U
             )
             Text(stringResource(R.string.conv_hint), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                items(units) { u -> UnitRow(u, u == from, value?.let { Units.convert(it, from, u) }) {
+                items(units) { u -> UnitRow(u, settings.language.code, u == from, value?.let { Units.convert(it, from, u) }) {
                     // Keep the same quantity, expressed in the newly selected unit.
                     if (value != null) text = Format.plain(Units.convert(value, from, u))
                     from = u
@@ -290,7 +294,7 @@ fun ConverterPage(category: UnitCategory, settings: AppSettings, onBack: () -> U
 }
 
 @Composable
-private fun UnitRow(u: MeasureUnit, selected: Boolean, value: Double?, onClick: () -> Unit) {
+private fun UnitRow(u: MeasureUnit, lang: String, selected: Boolean, value: Double?, onClick: () -> Unit) {
     val c = LocalCalcColors.current
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
@@ -301,7 +305,7 @@ private fun UnitRow(u: MeasureUnit, selected: Boolean, value: Double?, onClick: 
     ) {
         Column(Modifier.weight(1f)) {
             Text(u.symbol, style = mathStyle(LocalMathFont.current, 18f, c.text))
-            Text(u.name, color = c.muted, style = MaterialTheme.typography.bodySmall)
+            Text(UnitNames.of(u, lang), color = c.muted, style = MaterialTheme.typography.bodySmall)
         }
         Text(value?.let { Format.number(it, 10) } ?: "—", style = mathStyle(LocalMathFont.current, 20f, if (selected) c.accent else c.text))
     }

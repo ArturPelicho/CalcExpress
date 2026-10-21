@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         settings = AppSettings(this)
         updater = UpdaterProvider.create(this)
+        calc.restoreHistory(File(filesDir, "history.txt"))
         setContent {
             CalcTheme(settings.theme, settings.font) {
                 val colors = LocalCalcColors.current

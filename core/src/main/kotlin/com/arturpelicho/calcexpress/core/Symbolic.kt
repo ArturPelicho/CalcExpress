@@ -205,7 +205,7 @@ object Cas {
 
     private fun degreeHint(s: S): Double = when (s) {
         is S.N -> 0.0
-        is S.V -> 1.0
+        is S.V -> if (s.name.startsWith(Ode.CONSTANT)) -1.0 else 1.0 // integration constants go last
         is S.Pow -> (s.exp as? S.N)?.v?.let { it * max(1.0, degreeHint(s.base)) } ?: 1.5
         is S.Mul -> s.factors.sumOf { degreeHint(it) }
         else -> 1.0
