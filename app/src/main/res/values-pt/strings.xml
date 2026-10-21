@@ -85,4 +85,20 @@
     <string name="cat_force">Força</string>
     <string name="cat_angle">Ângulo</string>
     <string name="cat_data">Dados</string>
+    <string name="mohr_title">Círculo de Mohr</string>
+    <string name="mohr_desc">Interativo · tensões e extensões · 2D e 3D</string>
+    <string name="mohr_stress">Tensões</string>
+    <string name="mohr_strain">Extensões</string>
+    <string name="mohr_by_angle">Ângulo θ</string>
+    <string name="mohr_by_normal">Normal n</string>
+    <string name="mohr_hint_2d">Arrasta à volta do círculo para rodar o plano. O corte positivo é desenhado para baixo, por isso o ponto roda no mesmo sentido que o elemento.</string>
+    <string name="mohr_hint_3d">O ponto do plano fica sempre na zona sombreada entre os três círculos.</string>
+    <string name="mohr_principal">Valores principais</string>
+    <string name="mohr_directions">Direções principais</string>
+    <string name="mohr_on_plane">No plano</string>
+    <string name="mohr_centre">Centro</string>
+    <string name="mohr_radius">Raio</string>
+    <string name="mohr_fill">Escreve um número em todos os campos.</string>
+    <string name="mohr_strain_note">γ é a distorção (de engenharia); o círculo usa γ/2.</string>
+    <string name="mohr_zero_normal">A normal não pode ser nula.</string>
 </resources>

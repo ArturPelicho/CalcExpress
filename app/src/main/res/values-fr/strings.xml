@@ -85,4 +85,20 @@
     <string name="cat_force">Force</string>
     <string name="cat_angle">Angle</string>
     <string name="cat_data">Données</string>
+    <string name="mohr_title">Cercle de Mohr</string>
+    <string name="mohr_desc">Interactif · contraintes et déformations · 2D et 3D</string>
+    <string name="mohr_stress">Contraintes</string>
+    <string name="mohr_strain">Déformations</string>
+    <string name="mohr_by_angle">Angle θ</string>
+    <string name="mohr_by_normal">Normale n</string>
+    <string name="mohr_hint_2d">Faites glisser autour du cercle pour tourner le plan. Le cisaillement positif est tracé vers le bas : le point tourne dans le même sens que l’élément.</string>
+    <string name="mohr_hint_3d">Le point du plan se trouve toujours dans la zone grisée entre les trois cercles.</string>
+    <string name="mohr_principal">Valeurs principales</string>
+    <string name="mohr_directions">Directions principales</string>
+    <string name="mohr_on_plane">Sur le plan</string>
+    <string name="mohr_centre">Centre</string>
+    <string name="mohr_radius">Rayon</string>
+    <string name="mohr_fill">Saisissez un nombre dans chaque champ.</string>
+    <string name="mohr_strain_note">γ est la distorsion angulaire ; le cercle utilise γ/2.</string>
+    <string name="mohr_zero_normal">La normale ne peut pas être nulle.</string>
 </resources>

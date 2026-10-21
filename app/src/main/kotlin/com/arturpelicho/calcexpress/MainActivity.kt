@@ -45,6 +45,7 @@ import com.arturpelicho.calcexpress.ui.ConverterPage
 import com.arturpelicho.calcexpress.ui.LocalCalcColors
 import com.arturpelicho.calcexpress.ui.MenuArea
 import com.arturpelicho.calcexpress.ui.MenuPage
+import com.arturpelicho.calcexpress.ui.MohrPage
 import com.arturpelicho.calcexpress.ui.SettingsArea
 import com.arturpelicho.calcexpress.ui.SettingsPage
 import com.arturpelicho.calcexpress.update.InstallResult
@@ -85,7 +86,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Screen { CALCULATOR, MENU, SETTINGS, CONVERTER }
+private enum class Screen { CALCULATOR, MENU, SETTINGS, CONVERTER, MOHR }
 
 @Composable
 private fun App(settings: AppSettings, calc: CalcState, updater: Updater, onLanguage: (AppLanguage) -> Unit) {
@@ -139,7 +140,7 @@ private fun App(settings: AppSettings, calc: CalcState, updater: Updater, onLang
     }
 
     BackHandler(enabled = screen != Screen.CALCULATOR) {
-        screen = if (screen == Screen.CONVERTER) Screen.MENU else Screen.CALCULATOR
+        screen = if (screen == Screen.CONVERTER || screen == Screen.MOHR) Screen.MENU else Screen.CALCULATOR
     }
 
     Box(Modifier.fillMaxSize().background(c.background).windowInsetsPadding(WindowInsets.safeDrawing)) {
@@ -169,6 +170,7 @@ private fun App(settings: AppSettings, calc: CalcState, updater: Updater, onLang
                 onOpenCalculator = { screen = Screen.CALCULATOR },
                 onFormula = { f -> calc.load(f.build(settings.units)); screen = Screen.CALCULATOR },
                 onConversion = { conversion = it; screen = Screen.CONVERTER },
+                onMohr = { screen = Screen.MOHR },
             )
             Screen.SETTINGS -> SettingsPage(
                 area = settingsArea, onArea = { settingsArea = it }, settings = settings,
@@ -178,6 +180,7 @@ private fun App(settings: AppSettings, calc: CalcState, updater: Updater, onLang
                 onBack = { screen = Screen.CALCULATOR },
             )
             Screen.CONVERTER -> ConverterPage(conversion, settings, onBack = { screen = Screen.MENU })
+            Screen.MOHR -> MohrPage(settings, onBack = { screen = Screen.MENU })
         }
     }
 }
