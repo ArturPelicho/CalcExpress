@@ -250,11 +250,12 @@ fun outcomeText(o: Outcome): String = when (o) {
     is Outcome.NumericOde -> stringResource(R.string.result_numeric_ode, o.y, o.x)
     is Outcome.Truth -> stringResource(if (o.holds) R.string.result_true else R.string.result_false)
     is Outcome.Function -> stringResource(R.string.result_function, o.variable)
-    is Outcome.Solutions -> o.values.joinToString("\n") { (name, vals) ->
-        if (vals.size == 1) "$name = ${Format.number(vals[0])}"
+    is Outcome.Solutions -> o.values.joinToString("\n") { (name, real) ->
+        val vals = real.map { Format.number(it) } + if (o.values.size == 1) o.complex.map(::complexText) else emptyList()
+        if (vals.size == 1) "$name = ${vals[0]}"
         else {
             // Equal roots share one line: x₁ = x₂ = 3.
-            val indexed = vals.mapIndexed { i, v -> i + 1 to Format.number(v) }
+            val indexed = vals.mapIndexed { i, v -> i + 1 to v }
             indexed.groupBy({ it.second }, { it.first }).entries.joinToString("\n") { (text, idx) ->
                 idx.joinToString(" = ") { "$name${subscript(it)}" } + " = " + text
             }
@@ -274,6 +275,17 @@ fun outcomeText(o: Outcome): String = when (o) {
         CalcException.Reason.MATRIX_SINGULAR -> stringResource(R.string.err_matrix_singular)
         CalcException.Reason.MATRIX_NOT_ALLOWED -> stringResource(R.string.err_matrix_not_allowed)
         CalcException.Reason.NO_ANTIDERIVATIVE -> stringResource(R.string.err_no_antiderivative)
+    }
+}
+
+/** a + bi, a − bi or bi. */
+private fun complexText(z: Pair<Double, Double>): String {
+    val (re, im) = z
+    val mag = kotlin.math.abs(im)
+    val imPart = (if (mag == 1.0) "" else Format.number(mag)) + "i"
+    return when {
+        re == 0.0 -> (if (im < 0) "−" else "") + imPart
+        else -> Format.number(re) + (if (im < 0) " − " else " + ") + imPart
     }
 }
 

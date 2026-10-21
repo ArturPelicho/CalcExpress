@@ -161,6 +161,46 @@ object Numerics {
      * Newton–Raphson for a square system F(x) = 0 with a numeric Jacobian and
      * step damping; tries several seeds and returns the first convergent solution.
      */
+    /**
+     * All complex roots (re, im) of Σ c[i]·xⁱ by Durand–Kerner, polished with Newton steps.
+     */
+    fun polynomialRoots(c: DoubleArray): List<Pair<Double, Double>> {
+        var deg = c.size - 1
+        while (deg > 0 && c[deg] == 0.0) deg--
+        if (deg < 1) return emptyList()
+        val a = DoubleArray(deg + 1) { c[it] / c[deg] }
+        val re = DoubleArray(deg); val im = DoubleArray(deg)
+        // Starting points (0.4 + 0.9i)^k.
+        var pr = 1.0; var pi = 0.0
+        for (k in 0 until deg) {
+            re[k] = pr; im[k] = pi
+            val nr = pr * 0.4 - pi * 0.9; pi = pr * 0.9 + pi * 0.4; pr = nr
+        }
+        repeat(800) {
+            var change = 0.0
+            for (k in 0 until deg) {
+                // p(z_k)
+                var vr = 1.0; var vi = 0.0
+                for (j in deg - 1 downTo 0) {
+                    val t = vr * re[k] - vi * im[k] + a[j]; vi = vr * im[k] + vi * re[k]; vr = t
+                }
+                // Π (z_k − z_j)
+                var dr = 1.0; var di = 0.0
+                for (j in 0 until deg) if (j != k) {
+                    val xr = re[k] - re[j]; val xi = im[k] - im[j]
+                    val t = dr * xr - di * xi; di = dr * xi + di * xr; dr = t
+                }
+                val den = dr * dr + di * di
+                if (den == 0.0) continue
+                val qr = (vr * dr + vi * di) / den; val qi = (vi * dr - vr * di) / den
+                re[k] -= qr; im[k] -= qi
+                change = max(change, abs(qr) + abs(qi))
+            }
+            if (change < 1e-15) return@repeat
+        }
+        return (0 until deg).map { re[it] to im[it] }
+    }
+
     fun solveSystem(n: Int, fns: (DoubleArray) -> DoubleArray): DoubleArray? {
         val seeds = listOf(1.0, 0.5, -1.0, 2.0, 0.0, 3.0, -2.0, 10.0)
         for (s in seeds) {

@@ -40,4 +40,18 @@ class ExactTest {
         assertIs<Outcome.Symbolic>(o, "got $o")
         assertEquals("=xcos(x)+sin(x)", o.rows.single().toString())
     }
+
+    @Test fun complexRoots() {
+        // x² + 1 = 0 → ±i
+        val e = Editor(); e.variable("x"); e.square(); e.operator(Sym.PLUS); e.digit('1'); e.equalsSign(); e.digit('0')
+        val o = eval(e, AngleUnit.RAD) as Outcome.Solutions
+        assertEquals(emptyList(), o.values.single().second)
+        assertEquals(listOf(0.0 to 1.0, 0.0 to -1.0), o.complex)
+        // x³ = 1 → 1 and −½ ± (√3/2)i
+        val c = Editor(); c.variable("x"); c.togglePower(); c.digit('3'); c.togglePower(); c.equalsSign(); c.digit('1')
+        val p = eval(c, AngleUnit.RAD) as Outcome.Solutions
+        assertEquals(1, p.values.single().second.size)
+        assertEquals(2, p.complex.size)
+        kotlin.test.assertTrue(kotlin.math.abs(p.complex[0].first + 0.5) < 1e-9 && kotlin.math.abs(p.complex[0].second - kotlin.math.sqrt(3.0) / 2) < 1e-9, "${p.complex}")
+    }
 }

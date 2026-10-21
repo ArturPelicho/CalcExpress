@@ -9,7 +9,11 @@ sealed class Outcome {
     data class Value(val value: Double, val exact: MathRow? = null) : Outcome()
     data class MatrixValue(val matrix: com.arturpelicho.calcexpress.core.Value.Mat) : Outcome()
     /** One entry per unknown; several values when an equation has several roots. */
-    data class Solutions(val values: List<Pair<String, List<Double>>>) : Outcome()
+    data class Solutions(
+        val values: List<Pair<String, List<Double>>>,
+        /** Non-real roots (re, im) of a single polynomial equation, listed after the real ones. */
+        val complex: List<Pair<Double, Double>> = emptyList(),
+    ) : Outcome()
     /** Fewer equations than unknowns: the first unknowns (by priority) in terms of the rest. */
     data class Parametric(val values: List<Pair<String, Affine>>) : Outcome()
     /** Symbolic results, one row each, already starting with "=" or "x =" (e.g. antiderivatives). */
@@ -106,8 +110,9 @@ object Analysis {
             val v = unknowns[0]
             val r = residuals[0]
             val roots = Numerics.findRoots({ x -> r.eval(ctx.with(v, x)) })
-            if (roots.isEmpty()) throw CalcException(CalcException.Reason.NO_SOLUTION)
-            return Outcome.Solutions(listOf(v to roots))
+            val complex = complexRoots(r, v, angle)
+            if (roots.isEmpty() && complex.isEmpty()) throw CalcException(CalcException.Reason.NO_SOLUTION)
+            return Outcome.Solutions(listOf(v to roots), complex)
         }
 
         // Square (or over-determined, using the first n) system.
@@ -186,6 +191,16 @@ object Analysis {
     private fun compareScores(a: List<Int>, b: List<Int>): Int {
         for (i in 0 until minOf(a.size, b.size)) if (a[i] != b[i]) return a[i] - b[i]
         return b.size - a.size
+    }
+
+    /** Non-real roots of [r] when it is a polynomial in [v] with numeric coefficients. */
+    private fun complexRoots(r: Expr, v: String, angle: AngleUnit): List<Pair<Double, Double>> {
+        val c = try { Cas.numericPolynomial(Cas.fromExpr(r, angle), v) } catch (e: Unsupported) { null } ?: return emptyList()
+        if (c.size < 3) return emptyList()
+        return Numerics.polynomialRoots(c)
+            .filter { abs(it.second) > 1e-7 * max(1.0, abs(it.first)) }
+            .map { (re, im) -> clean(re) to clean(im) }
+            .sortedWith(compareBy({ it.first }, { -it.second }))
     }
 
     /** "= closed form" when it is short, matches [v] and says more than the input or the decimal. */
