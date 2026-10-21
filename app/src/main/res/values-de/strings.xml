@@ -10,7 +10,7 @@
     <string name="calc_history">Verlauf</string>
     <string name="calc_history_empty">Noch keine Berechnungen.</string>
     <string name="calc_tips_title">Kurztipps</string>
-    <string name="calc_tips">• ^ kurz: Quadrat; lang: Exponent eingeben (markiert), erneut lang: zurück.\n• Ein Buchstabe erzeugt eine Variable; =[] macht die Zeile zur Gleichung, = löst sie.\n• ⊕= fügt eine weitere Gleichung für ein Gleichungssystem hinzu.\n• Tippe auf ein Kästchen, um es auszufüllen; ⇥ springt zum nächsten leeren.\n• Klammern wechseln automatisch ( ) → [ ] → { } je nach Verschachtelung.\n• Lang auf sin/cos/tan für die Umkehrfunktion, auf √ für die n-te Wurzel, auf einen Buchstaben für Großbuchstaben.\n• ∫ ohne Grenzen liefert die Stammfunktion (+ C).</string>
+    <string name="calc_tips">• ^ kurz: Quadrat; lang: Exponent eingeben (markiert), erneut lang: zurück.\n• Ein Buchstabe erzeugt eine Variable; =[] macht die Zeile zur Gleichung, = löst sie.\n• ⊕= fügt eine weitere Gleichung für ein Gleichungssystem hinzu.\n• Tippe auf ein Kästchen, um es auszufüllen; ⇥ springt zum nächsten leeren.\n• Klammern wechseln automatisch ( ) → [ ] → { } je nach Verschachtelung.\n• Lang auf sin/cos/tan für die Umkehrfunktion, auf √ für die n-te Wurzel, auf einen Buchstaben für Großbuchstaben.\n• ∫ ohne Grenzen liefert die Stammfunktion (+ C).\n• d/dx(y) = f(x, y) ist eine Differentialgleichung: Zeilen x = x₀, y = y₀ (und d/dx(y) = y₁) als Anfangsbedingungen hinzufügen.</string>
     <string name="settings_appearance">Darstellung</string>
     <string name="settings_preferences">Einstellungen</string>
     <string name="settings_about">Über die App</string>
@@ -63,6 +63,7 @@
     <string name="matrix_row">Zeile hinzufügen (halten zum Entfernen)</string>
     <string name="matrix_col">Spalte hinzufügen (halten zum Entfernen)</string>
     <string name="err_no_antiderivative">Keine elementare Stammfunktion gefunden</string>
+    <string name="result_numeric_ode">Numerische Lösung %1$s(%2$s): siehe Graph</string>
     <string name="result_true">Wahr</string>
     <string name="result_false">Falsch</string>
     <string name="result_function">Funktion von %1$s</string>

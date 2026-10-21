@@ -10,7 +10,7 @@
     <string name="calc_history">Historial</string>
     <string name="calc_history_empty">Aún no hay cálculos.</string>
     <string name="calc_tips_title">Consejos rápidos</string>
-    <string name="calc_tips">• ^ pulsación corta: cuadrado; larga: escribir el exponente (resaltado), otra larga para salir.\n• Una letra crea una variable; =[] convierte la línea en ecuación y = la resuelve.\n• ⊕= añade otra ecuación para resolver un sistema.\n• Toca una casilla para rellenarla; ⇥ salta a la siguiente vacía.\n• Los paréntesis cambian ( ) → [ ] → { } automáticamente según el nivel.\n• Pulsación larga en sin/cos/tan para la inversa, en √ para la raíz n-ésima, en una letra para mayúscula.\n• ∫ sin límites da la primitiva (+ C).</string>
+    <string name="calc_tips">• ^ pulsación corta: cuadrado; larga: escribir el exponente (resaltado), otra larga para salir.\n• Una letra crea una variable; =[] convierte la línea en ecuación y = la resuelve.\n• ⊕= añade otra ecuación para resolver un sistema.\n• Toca una casilla para rellenarla; ⇥ salta a la siguiente vacía.\n• Los paréntesis cambian ( ) → [ ] → { } automáticamente según el nivel.\n• Pulsación larga en sin/cos/tan para la inversa, en √ para la raíz n-ésima, en una letra para mayúscula.\n• ∫ sin límites da la primitiva (+ C).\n• d/dx(y) = f(x, y) es una ecuación diferencial: añade x = x₀, y = y₀ (y d/dx(y) = y₁) como condiciones iniciales.</string>
     <string name="settings_appearance">Apariencia</string>
     <string name="settings_preferences">Preferencias</string>
     <string name="settings_about">Acerca de la app</string>
@@ -63,6 +63,7 @@
     <string name="matrix_row">Añadir fila (mantén para quitar)</string>
     <string name="matrix_col">Añadir columna (mantén para quitar)</string>
     <string name="err_no_antiderivative">No se encontró primitiva elemental</string>
+    <string name="result_numeric_ode">Solución numérica %1$s(%2$s): mira el gráfico</string>
     <string name="result_true">Verdadero</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Función de %1$s</string>

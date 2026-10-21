@@ -188,7 +188,7 @@ class CalcState : KeyboardActions {
                 history.add(0, HistoryEntry(lines, o))
                 if (history.size > 50) history.removeAt(history.size - 1)
             }
-            if (o is Outcome.Function && g != null) showGraph = true
+            if ((o is Outcome.Function || o is Outcome.NumericOde) && g != null) showGraph = true
         }
     }
 }
@@ -201,6 +201,7 @@ fun outcomeText(o: Outcome): String = when (o) {
         (0 until o.matrix.cols).joinToString("  ") { col -> Format.number(o.matrix.data[r * o.matrix.cols + col]) }
     }
     is Outcome.Symbolic -> o.rows.joinToString("\n") { it.toString() }
+    is Outcome.NumericOde -> stringResource(R.string.result_numeric_ode, o.y, o.x)
     is Outcome.Truth -> stringResource(if (o.holds) R.string.result_true else R.string.result_false)
     is Outcome.Function -> stringResource(R.string.result_function, o.variable)
     is Outcome.Solutions -> o.values.joinToString("\n") { (name, vals) ->
