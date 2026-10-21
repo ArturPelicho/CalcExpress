@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -373,6 +374,10 @@ private fun ResultLine(state: CalcState) {
             msg != null -> Text(stringResource(msg), style = mathStyle(font, 16f, c.muted), textAlign = TextAlign.End)
             o is Outcome.MatrixValue -> StaticMath(listOf(matrixRow(o.matrix)), 24f, Modifier.horizontalScroll(rememberScrollState()))
             o is Outcome.Symbolic -> StaticMath(o.rows, 24f, Modifier.horizontalScroll(rememberScrollState()))
+            o is Outcome.Value && o.exact != null -> Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                StaticMath(listOf(o.exact), 26f)
+                Text("  ≈ " + Format.number(o.value), style = mathStyle(font, 22f, c.accent))
+            }
             o != null -> Text(
                 outcomeText(o),
                 style = mathStyle(font, if (o is Outcome.Error) 17f else 30f, if (o is Outcome.Error) c.error else c.accent),
