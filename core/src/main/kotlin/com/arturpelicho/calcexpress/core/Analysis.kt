@@ -1,8 +1,12 @@
 package com.arturpelicho.calcexpress.core
 
+import kotlin.math.abs
+import kotlin.math.max
+
 /** What the calculation area currently holds, and what "=" produced. */
 sealed class Outcome {
-    data class Value(val value: Double) : Outcome()
+    /** A number; [exact] is "= closed form" (π/3, √2/2, 1/7…) when one was found. */
+    data class Value(val value: Double, val exact: MathRow? = null) : Outcome()
     data class MatrixValue(val matrix: com.arturpelicho.calcexpress.core.Value.Mat) : Outcome()
     /** One entry per unknown; several values when an equation has several roots. */
     data class Solutions(val values: List<Pair<String, List<Double>>>) : Outcome()
@@ -51,9 +55,14 @@ object Analysis {
             val e = Parser.parse(lines[0], filled)
             if (Expr.hasIndefinite(e)) return Outcome.Symbolic(listOf(antiderivativeRow(symbolic(e, angle))))
             val free = e.freeVariables()
+            // A derivative of a function (not at a point): show it written out.
+            if (free.isNotEmpty() && Expr.hasDerivative(e)) {
+                val d = try { Cas.fromExpr(e, angle) } catch (x: Unsupported) { null }
+                if (d != null) return Outcome.Symbolic(listOf(MathRow(mutableListOf<Node>(Sym.equals())).also { it.items += Cas.toRow(d).items }))
+            }
             return when (free.size) {
                 0 -> when (val v = e.evalValue(ctx)) {
-                    is Value.Scalar -> Outcome.Value(checked(v.v))
+                    is Value.Scalar -> Outcome.Value(checked(v.v), exactRow(e, lines[0], v.v, angle))
                     is Value.Mat -> Outcome.MatrixValue(v)
                 }
                 1 -> Outcome.Function(free.first())
@@ -177,6 +186,21 @@ object Analysis {
     private fun compareScores(a: List<Int>, b: List<Int>): Int {
         for (i in 0 until minOf(a.size, b.size)) if (a[i] != b[i]) return a[i] - b[i]
         return b.size - a.size
+    }
+
+    /** "= closed form" when it is short, matches [v] and says more than the input or the decimal. */
+    private fun exactRow(e: Expr, input: MathRow, v: Double, angle: AngleUnit): MathRow? {
+        val s = try { Cas.fromExpr(e, angle) } catch (x: Unsupported) { return null } catch (x: CalcException) { return null }
+        if (s is S.N) {
+            val r = Cas.rational(s.v) ?: return null
+            if (r.second == 1L || Format.number(v).length <= 8) return null
+        } else {
+            val sv = Cas.evalOrNull(s, angle) ?: return null
+            if (abs(sv - v) > 1e-9 * max(1.0, abs(v))) return null
+        }
+        val row = Cas.toRow(s)
+        if (row.toString() == input.toString() || row.allRows().sumOf { it.items.size } > 30) return null
+        return MathRow(mutableListOf<Node>(Sym.equals())).also { it.items += row.items }
     }
 
     private fun symbolic(e: Expr, angle: AngleUnit): S =

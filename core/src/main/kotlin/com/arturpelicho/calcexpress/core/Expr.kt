@@ -240,17 +240,22 @@ sealed class Expr {
             if ((fn.isTrig) && abs(r) < 1e-14) 0.0 else r
 
         /** True when [e] contains an indefinite integral anywhere. */
-        fun hasIndefinite(e: Expr): Boolean = when (e) {
-            is IndefiniteE -> true
+        fun hasIndefinite(e: Expr): Boolean = any(e) { it is IndefiniteE }
+
+        /** True when [e] contains a derivative anywhere. */
+        fun hasDerivative(e: Expr): Boolean = any(e) { it is DerivativeE }
+
+        fun any(e: Expr, p: (Expr) -> Boolean): Boolean = p(e) || when (e) {
             is Num, is Const, is Var -> false
-            is Neg -> hasIndefinite(e.e)
-            is Bin -> hasIndefinite(e.a) || hasIndefinite(e.b)
-            is Call -> hasIndefinite(e.arg)
-            is RootE -> hasIndefinite(e.radicand) || (e.index?.let(::hasIndefinite) ?: false)
-            is MatrixE -> e.cells.any(::hasIndefinite)
-            is Factorial -> hasIndefinite(e.e)
-            is IntegralE -> hasIndefinite(e.body) || hasIndefinite(e.lower) || hasIndefinite(e.upper)
-            is DerivativeE -> hasIndefinite(e.body)
+            is Neg -> any(e.e, p)
+            is Bin -> any(e.a, p) || any(e.b, p)
+            is Call -> any(e.arg, p)
+            is RootE -> any(e.radicand, p) || (e.index?.let { any(it, p) } ?: false)
+            is MatrixE -> e.cells.any { any(it, p) }
+            is Factorial -> any(e.e, p)
+            is IntegralE -> any(e.body, p) || any(e.lower, p) || any(e.upper, p)
+            is IndefiniteE -> any(e.body, p)
+            is DerivativeE -> any(e.body, p)
         }
 
         fun factorial(n: Double): Double {

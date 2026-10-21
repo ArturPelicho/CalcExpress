@@ -187,6 +187,10 @@ private fun CalculatorSections(calc: CalcState, onOpen: () -> Unit) {
                 val o = h.outcome
                 if (o is Outcome.MatrixValue) StaticMath(listOf(matrixRow(o.matrix)), 16f)
                 else if (o is Outcome.Symbolic) Box(Modifier.horizontalScroll(rememberScrollState())) { StaticMath(o.rows, 16f) }
+                else if (o is Outcome.Value && o.exact != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                    StaticMath(listOfNotNull(o.exact), 16f)
+                    Text("  ≈ " + Format.number(o.value), color = c.accent, style = MaterialTheme.typography.bodyLarge)
+                }
                 else Text(outcomeText(o), color = c.accent, style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(color = c.caseBorder.copy(alpha = 0.25f))

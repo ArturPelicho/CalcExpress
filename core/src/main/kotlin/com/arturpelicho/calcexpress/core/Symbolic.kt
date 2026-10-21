@@ -225,14 +225,27 @@ object Cas {
                 else -> throw Unsupported()
             }
         }
-        is Expr.Call -> if (e.fn.isMatrixFn) throw Unsupported() else fn(e.fn, fromExpr(e.arg, angle))
+        is Expr.Call -> if (e.fn.isMatrixFn) throw Unsupported() else Calculus(angle).exactFn(e.fn, fromExpr(e.arg, angle))
         is Expr.RootE -> pow(fromExpr(e.radicand, angle), e.index?.let { div(ONE, fromExpr(it, angle)) } ?: HALF)
         is Expr.Factorial -> if (e.freeVariables().isEmpty()) num(e.eval(EvalContext(angle))) else throw Unsupported()
-        is Expr.IntegralE -> if (e.freeVariables().isEmpty()) num(e.eval(EvalContext(angle))) else throw Unsupported()
+        is Expr.IntegralE -> {
+            val sym = try {
+                Calculus(angle).definite(fromExpr(e.body, angle), e.variable, fromExpr(e.lower, angle), fromExpr(e.upper, angle))
+            } catch (x: Unsupported) { null }
+            if (e.freeVariables().isEmpty()) {
+                // Trust F(b) − F(a) only when it agrees with the numerical integral.
+                val n = e.eval(EvalContext(angle))
+                val sv = sym?.let { evalOrNull(it, angle) }
+                if (sym != null && sv != null && abs(sv - n) <= 1e-7 * max(1.0, abs(n))) sym else num(n)
+            } else sym ?: throw Unsupported()
+        }
         is Expr.IndefiniteE -> Calculus(angle).antiderivative(fromExpr(e.body, angle), e.variable) ?: throw Unsupported()
         is Expr.DerivativeE -> Calculus(angle).derivative(fromExpr(e.body, angle), e.variable)
         is Expr.MatrixE -> throw Unsupported()
     }
+
+    fun evalOrNull(s: S, angle: AngleUnit): Double? =
+        try { toExpr(s).eval(EvalContext(angle)).takeIf { it.isFinite() } } catch (e: CalcException) { null }
 
     fun toExpr(s: S): Expr = when (s) {
         is S.N -> Expr.Num(s.v)
@@ -487,6 +500,74 @@ class Calculus(private val angle: AngleUnit) {
                 mul(outer, da)
             }
         }
+    }
+
+    // ------------------------------------------------------------------ exact values
+
+    /** Like [Cas.fn], with exact values of trig functions at multiples of 30° and 45° and their inverses. */
+    fun exactFn(f: Fn, a: S): S {
+        if (Cas.variables(a).isEmpty() && (f.isTrig || f.isInverseTrig)) {
+            val v = Cas.evalOrNull(a, angle)
+            if (v != null) {
+                if (f.isTrig) {
+                    val m = angle.toRadians(v) / (PI / 12)
+                    if (abs(m - Math.rint(m)) < 1e-9) exactTrig(f, Math.rint(m).toInt())?.let { return it }
+                } else {
+                    val r = when (f) { Fn.ASIN -> kotlin.math.asin(v); Fn.ACOS -> kotlin.math.acos(v); else -> kotlin.math.atan(v) }
+                    val m = r / (PI / 12)
+                    if (r.isFinite() && abs(m - Math.rint(m)) < 1e-9) {
+                        val k = Math.rint(m)
+                        return when (angle) {
+                            AngleUnit.RAD -> Cas.mul(Cas.num(k / 12), Cas.PI_C)
+                            AngleUnit.DEG -> Cas.num(k * 15)
+                            AngleUnit.GRAD -> Cas.num(k * 50 / 3)
+                        }
+                    }
+                }
+            }
+        }
+        return Cas.fn(f, a)
+    }
+
+    /** sin, cos or tan of m·15°, when it has a simple closed form. */
+    private fun exactTrig(f: Fn, m: Int): S? {
+        fun sin(k: Int): S? {
+            val n = ((k % 24) + 24) % 24
+            if (n >= 12) return sin(n - 12)?.let { Cas.neg(it) }
+            return when (n) {
+                0 -> Cas.ZERO
+                2, 10 -> Cas.HALF
+                3, 9 -> Cas.mul(Cas.HALF, Cas.pow(Cas.num(2.0), Cas.HALF))
+                4, 8 -> Cas.mul(Cas.HALF, Cas.pow(Cas.num(3.0), Cas.HALF))
+                6 -> Cas.ONE
+                else -> null
+            }
+        }
+        return when (f) {
+            Fn.SIN -> sin(m)
+            Fn.COS -> sin(m + 6)
+            Fn.TAN -> {
+                val s = sin(m) ?: return null
+                val c = sin(m + 6) ?: return null
+                if (c == Cas.ZERO) null else Cas.div(s, c)
+            }
+            else -> null
+        }
+    }
+
+    /** Rebuilds [s] applying [exactFn] (after substituting numbers into an antiderivative). */
+    fun exact(s: S): S = when (s) {
+        is S.N, is S.C, is S.V -> s
+        is S.Add -> Cas.add(s.terms.map(::exact))
+        is S.Mul -> Cas.mul(s.factors.map(::exact))
+        is S.Pow -> Cas.pow(exact(s.base), exact(s.exp))
+        is S.F -> exactFn(s.fn, exact(s.arg))
+    }
+
+    /** F(upper) − F(lower), or null without an antiderivative. */
+    fun definite(body: S, v: String, lower: S, upper: S): S? {
+        val big = antiderivative(body, v) ?: return null
+        return Cas.sub(exact(Cas.substitute(big, v, upper)), exact(Cas.substitute(big, v, lower)))
     }
 
     /** d/dv of [g] when it is free of v and non-zero (g = a·v + b), else null. */
