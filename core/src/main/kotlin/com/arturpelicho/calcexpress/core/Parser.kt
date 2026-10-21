@@ -39,7 +39,8 @@ class Parser private constructor(
                     }
                     SymKind.VARIABLE -> out += Tok.Atom(Expr.Var(n.text))
                     SymKind.CONSTANT -> out += Tok.Atom(
-                        Expr.Num(
+                        Expr.Const(
+                            n.text,
                             when (n.text) {
                                 Sym.PI -> PI
                                 Sym.E -> E
@@ -71,8 +72,13 @@ class Parser private constructor(
                 is Root -> out += Tok.Atom(Expr.RootE(parseRow(n.radicand), n.index?.let { parseRow(it) }))
                 is FuncCall -> out += Tok.Atom(Expr.Call(n.fn, parseRow(n.argument)))
                 is Integral -> {
-                    if (n.lower.isEmpty || n.upper.isEmpty) throw CalcException(CalcException.Reason.INDEFINITE_INTEGRAL)
                     val v = variableName(n.variable)
+                    if (n.lower.isEmpty && n.upper.isEmpty) {
+                        out += Tok.Atom(Expr.IndefiniteE(Parser(integralDepth, filled).parseRow(n.body), v))
+                        i++
+                        continue
+                    }
+                    if (n.lower.isEmpty || n.upper.isEmpty) throw CalcException(CalcException.Reason.INDEFINITE_INTEGRAL)
                     val inner = Parser(integralDepth + 1, filled)
                     out += Tok.Atom(Expr.IntegralE(parseRow(n.lower), parseRow(n.upper), inner.parseRow(n.body), v, integralDepth))
                 }

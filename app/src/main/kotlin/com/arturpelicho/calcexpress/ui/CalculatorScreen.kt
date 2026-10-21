@@ -147,7 +147,7 @@ class CalcState : KeyboardActions {
     fun nextCase() = edit { nextEmptyCase() }
 
     fun reorder() {
-        if (editor.reorderIntegration()) changed() else message = R.string.reorder_not_possible
+        if (editor.reorderIntegration(angle)) changed() else message = R.string.reorder_not_possible
     }
 
     val canReorder: Boolean
@@ -200,6 +200,7 @@ fun outcomeText(o: Outcome): String = when (o) {
     is Outcome.MatrixValue -> "= " + (0 until o.matrix.rows).joinToString("; ", "[", "]") { r ->
         (0 until o.matrix.cols).joinToString("  ") { col -> Format.number(o.matrix.data[r * o.matrix.cols + col]) }
     }
+    is Outcome.Symbolic -> o.rows.joinToString("\n") { it.toString() }
     is Outcome.Truth -> stringResource(if (o.holds) R.string.result_true else R.string.result_false)
     is Outcome.Function -> stringResource(R.string.result_function, o.variable)
     is Outcome.Solutions -> o.values.joinToString("\n") { (name, vals) ->
@@ -225,6 +226,7 @@ fun outcomeText(o: Outcome): String = when (o) {
         CalcException.Reason.MATRIX_DIMENSIONS -> stringResource(R.string.err_matrix_dims)
         CalcException.Reason.MATRIX_SINGULAR -> stringResource(R.string.err_matrix_singular)
         CalcException.Reason.MATRIX_NOT_ALLOWED -> stringResource(R.string.err_matrix_not_allowed)
+        CalcException.Reason.NO_ANTIDERIVATIVE -> stringResource(R.string.err_no_antiderivative)
     }
 }
 
@@ -324,6 +326,7 @@ private fun ResultLine(state: CalcState) {
             state.computing -> CircularProgressIndicator(Modifier.padding(4.dp))
             msg != null -> Text(stringResource(msg), style = mathStyle(font, 16f, c.muted), textAlign = TextAlign.End)
             o is Outcome.MatrixValue -> StaticMath(listOf(matrixRow(o.matrix)), 24f, Modifier.horizontalScroll(rememberScrollState()))
+            o is Outcome.Symbolic -> StaticMath(o.rows, 24f, Modifier.horizontalScroll(rememberScrollState()))
             o != null -> Text(
                 outcomeText(o),
                 style = mathStyle(font, if (o is Outcome.Error) 17f else 30f, if (o is Outcome.Error) c.error else c.accent),

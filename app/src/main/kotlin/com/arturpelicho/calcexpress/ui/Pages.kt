@@ -182,6 +182,7 @@ private fun CalculatorSections(calc: CalcState, onOpen: () -> Unit) {
                 Box(Modifier.horizontalScroll(rememberScrollState())) { StaticMath(h.lines, 18f) }
                 val o = h.outcome
                 if (o is Outcome.MatrixValue) StaticMath(listOf(matrixRow(o.matrix)), 16f)
+                else if (o is Outcome.Symbolic) Box(Modifier.horizontalScroll(rememberScrollState())) { StaticMath(o.rows, 16f) }
                 else Text(outcomeText(o), color = c.accent, style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(color = c.caseBorder.copy(alpha = 0.25f))

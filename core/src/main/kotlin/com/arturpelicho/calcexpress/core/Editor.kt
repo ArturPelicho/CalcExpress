@@ -439,10 +439,23 @@ class Editor {
 
     /**
      * Rotates the order of integration of the multiple integral on the active line
-     * (only valid for constant limits; returns false otherwise).
+     * (any order for constant limits; a double integral with variable inner limits is split into
+     * pieces when needed; returns false when the region is not handled).
      */
-    fun reorderIntegration(): Boolean {
-        val chain = integralChain(outermostIntegral() ?: return false)
+    fun reorderIntegration(angle: AngleUnit = AngleUnit.RAD): Boolean {
+        val outer = outermostIntegral() ?: return false
+        val chain = integralChain(outer)
+        if (chain.size == 2 && !Analysis.limitsAreConstant(chain)) {
+            val nodes = IntegralOrder.reorder(chain[0], chain[1], angle) ?: return false
+            val line = activeLine
+            val at = line.items.indexOf(outer)
+            if (at < 0) return false
+            line.items.removeAt(at)
+            line.items.addAll(at, nodes)
+            caret = Caret(line, line.items.size)
+            changed()
+            return true
+        }
         if (chain.size < 2 || !Analysis.limitsAreConstant(chain)) return false
         val limits = chain.map { Triple(it.lower.deepCopy(), it.upper.deepCopy(), it.variable.deepCopy()) }
         val rotated = limits.drop(1) + limits.first()

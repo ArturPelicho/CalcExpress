@@ -11,7 +11,7 @@
     <string name="calc_history">History</string>
     <string name="calc_history_empty">No calculations yet.</string>
     <string name="calc_tips_title">Quick tips</string>
-    <string name="calc_tips">• ^ short press squares; long press enters the exponent (highlighted), long press again leaves it.\n• Typing a letter creates a variable; =[] turns the line into an equation and = solves it.\n• ⊕= adds another equation to solve a system.\n• Tap any box (case) to fill it; ⇥ jumps to the next empty box.\n• Brackets change ( ) → [ ] → { } automatically with nesting.\n• Long press sin/cos/tan for the inverse, √ for the n-th root, a letter for upper case.</string>
+    <string name="calc_tips">• ^ short press squares; long press enters the exponent (highlighted), long press again leaves it.\n• Typing a letter creates a variable; =[] turns the line into an equation and = solves it.\n• ⊕= adds another equation to solve a system.\n• Tap any box (case) to fill it; ⇥ jumps to the next empty box.\n• Brackets change ( ) → [ ] → { } automatically with nesting.\n• Long press sin/cos/tan for the inverse, √ for the n-th root, a letter for upper case.\n• ∫ with empty limits gives the antiderivative (+ C).</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_preferences">Preferences</string>
     <string name="settings_about">About the app</string>
@@ -49,7 +49,7 @@
     <string name="dismiss">Dismiss</string>
     <string name="graph">Graph</string>
     <string name="reorder">Change order of integration</string>
-    <string name="reorder_not_possible">Reordering works for constant limits for now.</string>
+    <string name="reorder_not_possible">This region can’t be reordered automatically yet.</string>
     <string name="err_syntax">Check the expression</string>
     <string name="err_empty_case">Fill in the highlighted boxes</string>
     <string name="err_domain">Undefined result</string>
@@ -57,12 +57,13 @@
     <string name="err_no_solution">No real solution found</string>
     <string name="err_underdetermined">Unknowns %1$s: add another equation (⊕=)</string>
     <string name="err_not_equation">Every line of a system needs =</string>
-    <string name="err_indefinite">Fill in the integration limits</string>
+    <string name="err_indefinite">Fill in both limits, or leave both empty for the antiderivative</string>
     <string name="err_matrix_dims">Matrix sizes don’t match</string>
     <string name="err_matrix_singular">Singular matrix: no inverse</string>
     <string name="err_matrix_not_allowed">A matrix can’t be used here</string>
     <string name="matrix_row">Add matrix row (hold to remove)</string>
     <string name="matrix_col">Add matrix column (hold to remove)</string>
+    <string name="err_no_antiderivative">No elementary antiderivative found</string>
     <string name="result_true">True</string>
     <string name="result_false">False</string>
     <string name="result_function">Function of %1$s</string>

@@ -109,10 +109,37 @@ class CalculatorTest {
     }
 
     @Test fun underdetermined() {
+        // x·e^x = y cannot be isolated for x or y… but y can: y is alone. Use x + sin(x)·y = sin(y)·x instead.
+        val e = Editor(); e.type("x+y")
+        e.function(Fn.SIN); e.type("x"); e.moveRight(); e.type("=x")
+        e.function(Fn.SIN); e.type("y")
+        val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
+        assertIs<Outcome.Error>(o, "got $o")
+        assertEquals(CalcException.Reason.UNDERDETERMINED, o.reason)
+    }
+
+    @Test fun nonLinearUnderdeterminedIsolatesX() {
+        // x·x·y = 3 → x = ±√(3/y)
         val e = Editor(); e.type("x*x*y=3")
         val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
-        assertIs<Outcome.Error>(o)
-        assertEquals(CalcException.Reason.UNDERDETERMINED, o.reason)
+        assertIs<Outcome.Symbolic>(o, "got $o")
+        assertEquals(2, o.rows.size, o.rows.toString())
+        assertTrue(o.rows[0].toString().startsWith("x₁="), o.rows.toString())
+        // xy = 4 → x = 4/y
+        val f = Editor(); f.type("xy=4")
+        val p = Analysis.evaluate(f.lines, AngleUnit.RAD) as Outcome.Symbolic
+        assertEquals("x=frac(4,y)", p.rows.single().toString())
+    }
+
+    @Test fun nonLinearSystemWithFreeParameter() {
+        // x·y = z, x + y = 3  → both x and y in terms of z
+        val e = Editor(); e.type("xy=z")
+        e.addEquation()
+        e.type("x+y"); e.moveRight(); e.moveRight(); e.moveRight(); e.type("3")
+        val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
+        assertIs<Outcome.Symbolic>(o, "got $o")
+        assertTrue(o.rows.any { it.toString().startsWith("y") }, o.rows.toString())
+        assertTrue(o.rows.none { r -> r.toString().substringAfter("=").contains("x") || r.toString().substringAfter("=").contains("y") }, o.rows.toString())
     }
 
     @Test fun linearUnderdeterminedSolvesForXInTermsOfY() {
@@ -181,8 +208,33 @@ class CalculatorTest {
         e.integral(); e.type("0>x>1")
         (e.lines[0].items[0] as Integral).let { (it.body.items[0] as Integral).variable.items[0] = Sym.variable("y") }
         near(0.5, value(e), 1e-9)
-        assertTrue(!e.reorderIntegration())
         assertIs<GraphSpec.Region>(Analysis.graphFor(e.lines, AngleUnit.RAD))
+        // → ∫0^1 ∫y^1 1 dx dy
+        assertTrue(e.reorderIntegration())
+        val outer = e.lines[0].items.single() as Integral
+        assertEquals("y", outer.variable.toString())
+        val inner = outer.body.items.single() as Integral
+        assertEquals("y", inner.lower.toString())
+        assertEquals("1", inner.upper.toString())
+        near(0.5, value(e), 1e-9)
+    }
+
+    @Test fun reorderSplitsTheRegion() {
+        // ∫0^2 ∫0^(x²) x dy dx = 4 → ∫0^4 ∫√y^2 x dx dy
+        val e = Editor(); e.integral(); e.type("0>2>")
+        e.integral(); e.type("0>x*x>x")
+        (e.lines[0].items[0] as Integral).let { (it.body.items[0] as Integral).variable.items[0] = Sym.variable("y") }
+        near(4.0, value(e), 1e-7)
+        assertTrue(e.reorderIntegration())
+        near(4.0, value(e), 1e-7)
+        // ∫0^1 ∫(x)^(2−x) 1 dy dx = 1 (triangle-like region needing two pieces)
+        val t = Editor(); t.integral(); t.type("0>1>")
+        t.integral(); t.type("x>2-x>1")
+        (t.lines[0].items[0] as Integral).let { (it.body.items[0] as Integral).variable.items[0] = Sym.variable("y") }
+        near(1.0, value(t), 1e-9)
+        assertTrue(t.reorderIntegration())
+        assertEquals(3, t.lines[0].items.size, t.lines[0].toString())
+        near(1.0, value(t), 1e-7)
     }
 
     @Test fun derivativeInEquation() {

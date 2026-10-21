@@ -193,6 +193,8 @@ private fun NodeView(node: Node, row: MathRow, index: Int, ctx: MathCtx, size: F
             if (node.fn == Fn.TRANSPOSE) {
                 arg()
                 RaisedText("T", ctx, size, tap)
+            } else if (node.fn == Fn.ABS) {
+                Bracketed(1, ctx, size, bars = true) { MathRowView(node.argument, ctx, size) }
             } else {
                 Text(node.fn.label, style = mathStyle(ctx.font, size, ctx.colors.text), modifier = tap.padding(start = 1.dp, end = 2.dp))
                 arg()
@@ -332,9 +334,9 @@ private fun MatrixGrid(m: MatrixNode, ctx: MathCtx, size: Float) {
 
 /** Brackets sized to their content; ( ) [ ] { } by depth, growing beyond the third level. */
 @Composable
-fun Bracketed(depth: Int, ctx: MathCtx, size: Float, content: @Composable () -> Unit) {
+fun Bracketed(depth: Int, ctx: MathCtx, size: Float, bars: Boolean = false, content: @Composable () -> Unit) {
     val color = ctx.colors.text
-    val kind = (depth - 1) % 3
+    val kind = if (bars) BARS else (depth - 1) % 3
     val grow = (depth - 1) / 3
     Layout(
         content = {
@@ -360,6 +362,8 @@ fun Bracketed(depth: Int, ctx: MathCtx, size: Float, content: @Composable () -> 
     }
 }
 
+private const val BARS = 3
+
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBracket(kind: Int, left: Boolean, color: Color) {
     val w = size.width
     val h = size.height
@@ -372,6 +376,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBracket(kind: I
         0 -> { // ( )
             p.moveTo(inner, h * 0.04f)
             p.quadraticTo(outer - (inner - outer) * 0.3f, h / 2, inner, h * 0.96f)
+        }
+        BARS -> { // | |
+            p.moveTo((outer + inner) / 2, h * 0.04f); p.lineTo((outer + inner) / 2, h * 0.96f)
         }
         1 -> { // [ ]
             p.moveTo(inner, h * 0.04f); p.lineTo(outer, h * 0.04f); p.lineTo(outer, h * 0.96f); p.lineTo(inner, h * 0.96f)
