@@ -1,0 +1,80 @@
+name: Release
+
+# Every push to main publishes a signed APK to GitHub Releases;
+# the app's updater picks it up from there.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute version
+        id: version
+        run: |
+          CODE=$(git rev-list --count HEAD)
+          NAME="$(cat version.txt | tr -d '[:space:]').$CODE"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Version $NAME ($CODE)"
+
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.CALCEXPRESS_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.CALCEXPRESS_SIGNING_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$SIGNING_PASSWORD" ]; then
+            echo "::error::Signing secrets missing. Add CALCEXPRESS_KEYSTORE_BASE64 and CALCEXPRESS_SIGNING_PASSWORD in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "CALCEXPRESS_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build
+        env:
+          CALCEXPRESS_SIGNING_PASSWORD: ${{ secrets.CALCEXPRESS_SIGNING_PASSWORD }}
+        run: >
+          ./gradlew :core:test :app:assembleGithubRelease :app:bundlePlayRelease
+          -PversionCode=${{ steps.version.outputs.code }}
+          -PversionName=${{ steps.version.outputs.name }}
+          --stacktrace
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          APK="CalcExpress-$NAME.apk"
+          cp app/build/outputs/apk/github/release/app-github-release.apk "$APK"
+          PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "$PREV" ]; then RANGE="$PREV..HEAD"; else RANGE="HEAD"; fi
+          git log $RANGE --no-merges --pretty='- %s' | head -40 > notes.md
+          gh release create "v$NAME" "$APK" --title "CalcExpress $NAME" --notes-file notes.md --target "$GITHUB_SHA"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: play-bundle-${{ steps.version.outputs.name }}
+          path: app/build/outputs/bundle/playRelease/*.aab
+          retention-days: 30
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
