@@ -62,6 +62,7 @@ import com.arturpelicho.calcexpress.R
 import com.arturpelicho.calcexpress.ThemeChoice
 import com.arturpelicho.calcexpress.core.Format
 import com.arturpelicho.calcexpress.core.Formula
+import com.arturpelicho.calcexpress.core.FormulaArea
 import com.arturpelicho.calcexpress.core.FormulaCategory
 import com.arturpelicho.calcexpress.core.Formulas
 import com.arturpelicho.calcexpress.core.MeasureUnit
@@ -149,6 +150,7 @@ fun MenuPage(
     onOpenCalculator: () -> Unit,
     onFormula: (Formula) -> Unit,
     onConversion: (UnitCategory) -> Unit,
+    onMohr: () -> Unit,
 ) {
     PageScaffold(stringResource(R.string.menu), onBack) {
         SplitPage(
@@ -162,7 +164,7 @@ fun MenuPage(
             when (a) {
                 MenuArea.CALCULATOR -> CalculatorSections(calc, onOpenCalculator)
                 MenuArea.CONVERSIONS -> ConversionSections(onConversion)
-                MenuArea.FORMULAS -> FormulaSections(settings, onFormula)
+                MenuArea.FORMULAS -> FormulaSections(settings, onFormula, onMohr)
             }
         }
     }
@@ -238,11 +240,11 @@ private fun ConversionSections(onConversion: (UnitCategory) -> Unit) {
 }
 
 @Composable
-private fun FormulaSections(settings: AppSettings, onFormula: (Formula) -> Unit) {
+private fun FormulaSections(settings: AppSettings, onFormula: (Formula) -> Unit, onMohr: () -> Unit) {
     // Areas first; tapping one opens just its formulas, so the list stays short.
     var openName by rememberSaveable { mutableStateOf<String?>(null) }
     val open = openName?.let { n -> FormulaCategory.entries.firstOrNull { it.name == n } }
-    if (open == null) FormulaAreas(settings.language.code) { openName = it.name }
+    if (open == null) FormulaAreas(settings.language.code, onMohr) { openName = it.name }
     else {
         BackHandler { openName = null }
         FormulaList(open, settings, onBack = { openName = null }, onFormula = onFormula)
@@ -250,7 +252,7 @@ private fun FormulaSections(settings: AppSettings, onFormula: (Formula) -> Unit)
 }
 
 @Composable
-private fun FormulaAreas(lang: String, onOpen: (FormulaCategory) -> Unit) {
+private fun FormulaAreas(lang: String, onMohr: () -> Unit, onOpen: (FormulaCategory) -> Unit) {
     val c = LocalCalcColors.current
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         item { Text(stringResource(R.string.formulas_hint), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 8.dp)) }
@@ -262,6 +264,15 @@ private fun FormulaAreas(lang: String, onOpen: (FormulaCategory) -> Unit) {
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = if (i == 0) 4.dp else 18.dp, bottom = 4.dp),
                 )
+            }
+            if (i > 0 && cat.area == FormulaArea.ENGINEERING && FormulaCategory.entries[i - 1].area != cat.area) item {
+                Column(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp)).background(c.keyOperator)
+                        .border(1.dp, c.accent, RoundedCornerShape(10.dp)).clickable(onClick = onMohr).padding(horizontal = 12.dp, vertical = 12.dp),
+                ) {
+                    Text(stringResource(R.string.mohr_title) + "  ›", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.mohr_desc), color = c.muted, style = MaterialTheme.typography.bodySmall)
+                }
             }
             item {
                 Row(

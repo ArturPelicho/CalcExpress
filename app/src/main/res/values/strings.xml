@@ -86,4 +86,20 @@
     <string name="cat_force">Force</string>
     <string name="cat_angle">Angle</string>
     <string name="cat_data">Data</string>
+    <string name="mohr_title">Mohr\'s circle</string>
+    <string name="mohr_desc">Interactive · stresses and strains · 2D and 3D</string>
+    <string name="mohr_stress">Stress</string>
+    <string name="mohr_strain">Strain</string>
+    <string name="mohr_by_angle">Angle θ</string>
+    <string name="mohr_by_normal">Normal n</string>
+    <string name="mohr_hint_2d">Drag around the circle to rotate the plane. Positive shear is drawn downwards, so the point turns the same way as the element.</string>
+    <string name="mohr_hint_3d">The plane\'s point always lies in the shaded region between the three circles.</string>
+    <string name="mohr_principal">Principal values</string>
+    <string name="mohr_directions">Principal directions</string>
+    <string name="mohr_on_plane">On the plane</string>
+    <string name="mohr_centre">Centre</string>
+    <string name="mohr_radius">Radius</string>
+    <string name="mohr_fill">Enter a number in every field.</string>
+    <string name="mohr_strain_note">γ is the engineering shear strain; the circle uses γ/2.</string>
+    <string name="mohr_zero_normal">The normal cannot be zero.</string>
 </resources>

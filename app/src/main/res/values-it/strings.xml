@@ -85,4 +85,20 @@
     <string name="cat_force">Forza</string>
     <string name="cat_angle">Angolo</string>
     <string name="cat_data">Dati</string>
+    <string name="mohr_title">Cerchio di Mohr</string>
+    <string name="mohr_desc">Interattivo · tensioni e deformazioni · 2D e 3D</string>
+    <string name="mohr_stress">Tensioni</string>
+    <string name="mohr_strain">Deformazioni</string>
+    <string name="mohr_by_angle">Angolo θ</string>
+    <string name="mohr_by_normal">Normale n</string>
+    <string name="mohr_hint_2d">Trascina attorno al cerchio per ruotare il piano. Il taglio positivo è disegnato verso il basso, quindi il punto ruota come l’elemento.</string>
+    <string name="mohr_hint_3d">Il punto del piano si trova sempre nella zona ombreggiata tra i tre cerchi.</string>
+    <string name="mohr_principal">Valori principali</string>
+    <string name="mohr_directions">Direzioni principali</string>
+    <string name="mohr_on_plane">Sul piano</string>
+    <string name="mohr_centre">Centro</string>
+    <string name="mohr_radius">Raggio</string>
+    <string name="mohr_fill">Inserisci un numero in ogni campo.</string>
+    <string name="mohr_strain_note">γ è lo scorrimento angolare; il cerchio usa γ/2.</string>
+    <string name="mohr_zero_normal">La normale non può essere nulla.</string>
 </resources>
