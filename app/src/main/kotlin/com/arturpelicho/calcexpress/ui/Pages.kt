@@ -2,6 +2,7 @@ package com.arturpelicho.calcexpress.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -238,8 +239,19 @@ private fun ConversionSections(onConversion: (UnitCategory) -> Unit) {
 
 @Composable
 private fun FormulaSections(settings: AppSettings, onFormula: (Formula) -> Unit) {
+    // Areas first; tapping one opens just its formulas, so the list stays short.
+    var openName by rememberSaveable { mutableStateOf<String?>(null) }
+    val open = openName?.let { n -> FormulaCategory.entries.firstOrNull { it.name == n } }
+    if (open == null) FormulaAreas(settings.language.code) { openName = it.name }
+    else {
+        BackHandler { openName = null }
+        FormulaList(open, settings, onBack = { openName = null }, onFormula = onFormula)
+    }
+}
+
+@Composable
+private fun FormulaAreas(lang: String, onOpen: (FormulaCategory) -> Unit) {
     val c = LocalCalcColors.current
-    val lang = settings.language.code
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         item { Text(stringResource(R.string.formulas_hint), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 8.dp)) }
         FormulaCategory.entries.forEachIndexed { i, cat ->
@@ -248,26 +260,53 @@ private fun FormulaSections(settings: AppSettings, onFormula: (Formula) -> Unit)
                     cat.area.title.get(lang).uppercase(),
                     color = c.accent,
                     style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(top = if (i == 0) 4.dp else 18.dp, bottom = 2.dp),
+                    modifier = Modifier.padding(top = if (i == 0) 4.dp else 18.dp, bottom = 4.dp),
                 )
             }
-            item { SectionTitle(cat.title.get(lang)) }
-            items(Formulas.byCategory(cat)) { f ->
-                Column(
+            item {
+                Row(
                     Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp)).background(c.keyNumber)
-                        .clickable { onFormula(f) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                        .clickable { onOpen(cat) }.padding(horizontal = 12.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(f.name.get(lang), style = MaterialTheme.typography.titleSmall)
-                    val rows = remember(f.id, settings.units) { f.build(settings.units) }
-                    Box(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
-                        StaticMath(rows, 19f, labels = true)
+                    Text(cat.title.get(lang), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text("${Formulas.byCategory(cat).size}  ›", color = c.muted, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        item { Spacer(Modifier.height(24.dp)) }
+    }
+}
+
+@Composable
+private fun FormulaList(cat: FormulaCategory, settings: AppSettings, onBack: () -> Unit, onFormula: (Formula) -> Unit) {
+    val c = LocalCalcColors.current
+    val lang = settings.language.code
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+        item {
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onBack).padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = c.accent)
+                Text(cat.title.get(lang), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+        items(Formulas.byCategory(cat)) { f ->
+            Column(
+                Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp)).background(c.keyNumber)
+                    .clickable { onFormula(f) }.padding(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Text(f.name.get(lang), style = MaterialTheme.typography.titleSmall)
+                val rows = remember(f.id, settings.units) { f.build(settings.units) }
+                Box(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
+                    StaticMath(rows, 19f, labels = true)
+                }
+                if (f.vars.isNotEmpty()) {
+                    val units = f.vars.joinToString("   ") { v ->
+                        "${v.label} [${if (settings.units == UnitSystem.METRIC) v.metric else v.imperial}]"
                     }
-                    if (f.vars.isNotEmpty()) {
-                        val units = f.vars.joinToString("   ") { v ->
-                            "${v.label} [${if (settings.units == UnitSystem.METRIC) v.metric else v.imperial}]"
-                        }
-                        Text(mathLabel(units), color = c.muted, style = MaterialTheme.typography.bodySmall)
-                    }
+                    Text(mathLabel(units), color = c.muted, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
