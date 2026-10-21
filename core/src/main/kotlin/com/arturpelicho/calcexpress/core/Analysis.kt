@@ -3,8 +3,11 @@ package com.arturpelicho.calcexpress.core
 /** What the calculation area currently holds, and what "=" produced. */
 sealed class Outcome {
     data class Value(val value: Double) : Outcome()
+    data class MatrixValue(val matrix: com.arturpelicho.calcexpress.core.Value.Mat) : Outcome()
     /** One entry per unknown; several values when an equation has several roots. */
     data class Solutions(val values: List<Pair<String, List<Double>>>) : Outcome()
+    /** Fewer equations than unknowns: the first unknowns (by priority) in terms of the rest. */
+    data class Parametric(val values: List<Pair<String, Affine>>) : Outcome()
     data class Truth(val holds: Boolean) : Outcome()
     /** An expression with one free variable: a function that can be plotted. */
     data class Function(val variable: String) : Outcome()
@@ -44,7 +47,10 @@ object Analysis {
             val e = Parser.parse(lines[0], filled)
             val free = e.freeVariables()
             return when (free.size) {
-                0 -> Outcome.Value(checked(e.eval(ctx)))
+                0 -> when (val v = e.evalValue(ctx)) {
+                    is Value.Scalar -> Outcome.Value(checked(v.v))
+                    is Value.Mat -> Outcome.MatrixValue(v)
+                }
                 1 -> Outcome.Function(free.first())
                 else -> throw CalcException(CalcException.Reason.UNKNOWN_VARIABLE, free.sorted().joinToString(", "))
             }
@@ -63,8 +69,16 @@ object Analysis {
             val holds = residuals.all { r -> kotlin.math.abs(r.eval(ctx)) < 1e-9 }
             return Outcome.Truth(holds)
         }
+        // Linear systems are solved exactly; with too few equations the priority unknowns
+        // (x, y, z, α, …) are written in terms of the others.
+        Linear.coefficients(residuals, unknowns, ctx)?.let { (a, c) ->
+            val sol = Linear.solve(a, c, unknowns)
+            return if (sol.isEmpty()) Outcome.Truth(true) else if (sol.all { it.second.terms.isEmpty() } && sol.size == unknowns.size) {
+                Outcome.Solutions(Linear.byPriority(unknowns).map { u -> u to listOf(sol.first { it.first == u }.second.constant) })
+            } else Outcome.Parametric(sol)
+        }
         if (unknowns.size > residuals.size) {
-            throw CalcException(CalcException.Reason.UNDERDETERMINED, unknowns.joinToString(", "))
+            throw CalcException(CalcException.Reason.UNDERDETERMINED, Linear.byPriority(unknowns).joinToString(", "))
         }
 
         if (unknowns.size == 1 && residuals.size == 1) {

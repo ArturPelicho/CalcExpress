@@ -76,6 +76,7 @@ class Parser private constructor(
                     val inner = Parser(integralDepth + 1, filled)
                     out += Tok.Atom(Expr.IntegralE(parseRow(n.lower), parseRow(n.upper), inner.parseRow(n.body), v, integralDepth))
                 }
+                is MatrixNode -> out += Tok.Atom(Expr.MatrixE(n.rowCount, n.colCount, n.cells.map { parseRow(it) }))
                 is Derivative -> out += Tok.Atom(Expr.DerivativeE(variableName(n.variable), parseRow(n.body)))
             }
             i++

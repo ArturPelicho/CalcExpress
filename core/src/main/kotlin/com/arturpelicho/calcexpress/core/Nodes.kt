@@ -81,7 +81,10 @@ enum class Fn(val label: String) {
     SIN("sin"), COS("cos"), TAN("tan"),
     ASIN("sin⁻¹"), ACOS("cos⁻¹"), ATAN("tan⁻¹"),
     SINH("sinh"), COSH("cosh"), TANH("tanh"),
-    LN("ln"), LOG("log"), EXP("exp"), ABS("abs");
+    LN("ln"), LOG("log"), EXP("exp"), ABS("abs"),
+    DET("det"), TRANSPOSE("ᵀ"), TRACE("tr");
+
+    val isMatrixFn get() = this == DET || this == TRANSPOSE || this == TRACE
 
     val isTrig get() = this == SIN || this == COS || this == TAN
     val isInverseTrig get() = this == ASIN || this == ACOS || this == ATAN
@@ -123,6 +126,23 @@ class Slot(val label: String? = null, val content: MathRow = MathRow()) : Node()
     override val rows get() = listOf(content)
     override fun deepCopy() = Slot(label, content.deepCopy())
     override fun toString() = if (content.isEmpty) "[${label ?: ""}]" else "[$content]"
+}
+
+/** A matrix of cases, stored row-major in [cells]. */
+class MatrixNode(var rowCount: Int, var colCount: Int, val cells: MutableList<MathRow>) : Node() {
+    init { require(cells.size == rowCount * colCount) }
+
+    override val rows get() = cells
+    override fun deepCopy() = MatrixNode(rowCount, colCount, cells.mapTo(mutableListOf()) { it.deepCopy() })
+    override fun toString() = (0 until rowCount).joinToString(";", "[", "]") { r ->
+        (0 until colCount).joinToString(",") { c -> cells[r * colCount + c].toString() }
+    }
+
+    fun cell(r: Int, c: Int) = cells[r * colCount + c]
+
+    companion object {
+        fun empty(rows: Int, cols: Int) = MatrixNode(rows, cols, MutableList(rows * cols) { MathRow() })
+    }
 }
 
 /** Walks every row in the tree (depth first, including [root]). */

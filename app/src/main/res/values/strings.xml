@@ -58,6 +58,11 @@
     <string name="err_underdetermined">Unknowns %1$s: add another equation (⊕=)</string>
     <string name="err_not_equation">Every line of a system needs =</string>
     <string name="err_indefinite">Fill in the integration limits</string>
+    <string name="err_matrix_dims">Matrix sizes don’t match</string>
+    <string name="err_matrix_singular">Singular matrix: no inverse</string>
+    <string name="err_matrix_not_allowed">A matrix can’t be used here</string>
+    <string name="matrix_row">Add matrix row (hold to remove)</string>
+    <string name="matrix_col">Add matrix column (hold to remove)</string>
     <string name="result_true">True</string>
     <string name="result_false">False</string>
     <string name="result_function">Function of %1$s</string>

@@ -20,6 +20,18 @@ class Editor {
 
     val isEmpty: Boolean get() = lines.all { it.isEmpty }
 
+    /** True while the caret sits inside a matrix cell. */
+    val inMatrix: Boolean get() = enclosingMatrix() != null
+
+    private fun enclosingMatrix(): Pair<MatrixNode, MathRow>? {
+        var r = caret.row
+        while (true) {
+            val p = parentOf(r) ?: return null
+            if (p.node is MatrixNode) return p.node to r
+            r = p.owner
+        }
+    }
+
     /** True while the caret sits inside an exponent ("power mode"). */
     val inPower: Boolean get() = enclosingNodes(caret.row).any { it.first is Power }
 
@@ -260,6 +272,65 @@ class Editor {
     fun derivative() {
         val n = Derivative()
         insertAndEnter(n, n.body)
+        changed()
+    }
+
+    fun matrix(rows: Int, cols: Int) {
+        val m = MatrixNode.empty(rows, cols)
+        insertAndEnter(m, m.cells[0])
+        changed()
+    }
+
+    /** Adds a row below the caret's row of the enclosing matrix. */
+    fun addMatrixRow() {
+        val (m, cell) = enclosingMatrix() ?: return
+        val r = m.cells.indexOfFirst { it === cell } / m.colCount
+        val at = (r + 1) * m.colCount
+        repeat(m.colCount) { m.cells.add(at, MathRow()) }
+        m.rowCount++
+        caret = Caret(m.cells[at], 0)
+        changed()
+    }
+
+    /** Adds a column right of the caret's column of the enclosing matrix. */
+    fun addMatrixColumn() {
+        val (m, cell) = enclosingMatrix() ?: return
+        val c = m.cells.indexOfFirst { it === cell } % m.colCount
+        val newCols = m.colCount + 1
+        val rebuilt = MutableList(m.rowCount * newCols) { i ->
+            val rr = i / newCols
+            val cc = i % newCols
+            when {
+                cc <= c -> m.cells[rr * m.colCount + cc]
+                cc == c + 1 -> MathRow()
+                else -> m.cells[rr * m.colCount + cc - 1]
+            }
+        }
+        m.cells.clear(); m.cells.addAll(rebuilt)
+        m.colCount = newCols
+        caret = Caret(m.cells[c + 1], 0)
+        changed()
+    }
+
+    fun removeMatrixRow() {
+        val (m, cell) = enclosingMatrix() ?: return
+        if (m.rowCount <= 1) return
+        val r = m.cells.indexOfFirst { it === cell } / m.colCount
+        repeat(m.colCount) { m.cells.removeAt(r * m.colCount) }
+        m.rowCount--
+        val target = m.cells[(minOf(r, m.rowCount - 1)) * m.colCount]
+        caret = Caret(target, target.items.size)
+        changed()
+    }
+
+    fun removeMatrixColumn() {
+        val (m, cell) = enclosingMatrix() ?: return
+        if (m.colCount <= 1) return
+        val c = m.cells.indexOfFirst { it === cell } % m.colCount
+        for (rr in m.rowCount - 1 downTo 0) m.cells.removeAt(rr * m.colCount + c)
+        m.colCount--
+        val target = m.cells[minOf(c, m.colCount - 1)]
+        caret = Caret(target, target.items.size)
         changed()
     }
 

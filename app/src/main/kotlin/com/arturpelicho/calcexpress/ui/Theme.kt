@@ -1,6 +1,7 @@
 package com.arturpelicho.calcexpress.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -133,7 +134,10 @@ fun CalcTheme(theme: ThemeChoice, font: FontChoice, content: @Composable () -> U
         labelSmall = base.labelSmall.copy(fontFamily = family),
     )
     CompositionLocalProvider(LocalCalcColors provides colors, LocalMathFont provides family) {
-        MaterialTheme(colorScheme = scheme, typography = typography, content = content)
+        MaterialTheme(colorScheme = scheme, typography = typography) {
+            // Text and icons outside a Surface default to black; follow the theme instead.
+            CompositionLocalProvider(LocalContentColor provides colors.text, content = content)
+        }
     }
 }
 
