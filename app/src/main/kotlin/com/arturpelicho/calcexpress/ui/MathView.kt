@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arturpelicho.calcexpress.core.Derivative
+import com.arturpelicho.calcexpress.core.Fn
+import com.arturpelicho.calcexpress.core.MatrixNode
 import com.arturpelicho.calcexpress.core.Editor
 import com.arturpelicho.calcexpress.core.Fraction
 import com.arturpelicho.calcexpress.core.FuncCall
@@ -182,9 +184,21 @@ private fun NodeView(node: Node, row: MathRow, index: Int, ctx: MathCtx, size: F
         is Fraction -> FractionLayout(ctx, size, { MathRowView(node.numerator, ctx, size * 0.92f) }, { MathRowView(node.denominator, ctx, size * 0.92f) })
         is Root -> RootView(node, ctx, size)
         is FuncCall -> BaselineRow {
-            Text(node.fn.label, style = mathStyle(ctx.font, size, ctx.colors.text), modifier = tap.padding(start = 1.dp))
-            Bracketed(bracketDepth(node.argument) + 1, ctx, size) { MathRowView(node.argument, ctx, size) }
+            // A lone matrix argument already has brackets: det[…] instead of det([…]).
+            val loneMatrix = node.argument.items.singleOrNull() is MatrixNode
+            val arg = @Composable {
+                if (loneMatrix) MathRowView(node.argument, ctx, size)
+                else Bracketed(bracketDepth(node.argument) + 1, ctx, size) { MathRowView(node.argument, ctx, size) }
+            }
+            if (node.fn == Fn.TRANSPOSE) {
+                arg()
+                RaisedText("T", ctx, size, tap)
+            } else {
+                Text(node.fn.label, style = mathStyle(ctx.font, size, ctx.colors.text), modifier = tap.padding(start = 1.dp, end = 2.dp))
+                arg()
+            }
         }
+        is MatrixNode -> Bracketed(2, ctx, size) { MatrixGrid(node, ctx, size) }
         is Integral -> IntegralView(node, ctx, size)
         is Derivative -> BaselineRow {
             FractionLayout(
@@ -274,6 +288,44 @@ private fun FractionLayout(ctx: MathCtx, size: Float, num: @Composable () -> Uni
             n.place((w - n.width) / 2, 0)
             line.place(0, lineY)
             d.place((w - d.width) / 2, lineY + thick + gap)
+        }
+    }
+}
+
+/** Small text raised like an exponent (used for the transpose mark). */
+@Composable
+private fun RaisedText(text: String, ctx: MathCtx, size: Float, modifier: Modifier) {
+    val raise = with(LocalDensity.current) { (size * 0.42f).sp.toPx() }
+    Layout(content = { Text(text, style = mathStyle(ctx.font, size * 0.68f, ctx.colors.text), modifier = modifier) }) { ms, _ ->
+        val t = ms[0].measure(Constraints())
+        val b = t.baseline() + raise.roundToInt()
+        layout(t.width + 1.dp.roundToPx(), max(t.height, b + (size * 0.1f).sp.roundToPx()), mapOf(FirstBaseline to b)) { t.place(1.dp.roundToPx(), 0) }
+    }
+}
+
+@Composable
+private fun MatrixGrid(m: MatrixNode, ctx: MathCtx, size: Float) {
+    Layout(content = { m.cells.forEach { cell -> Box { MathRowView(cell, ctx, size * 0.92f) } } }) { ms, _ ->
+        val ps = ms.map { it.measure(Constraints()) }
+        val gapX = (size * 0.6f).sp.roundToPx()
+        val gapY = (size * 0.25f).sp.roundToPx()
+        val colW = IntArray(m.colCount) { c -> (0 until m.rowCount).maxOf { r -> ps[r * m.colCount + c].width } }
+        val asc = IntArray(m.rowCount) { r -> (0 until m.colCount).maxOf { c -> ps[r * m.colCount + c].baseline() } }
+        val desc = IntArray(m.rowCount) { r -> (0 until m.colCount).maxOf { c -> ps[r * m.colCount + c].let { it.height - it.baseline() } } }
+        val w = colW.sum() + gapX * (m.colCount - 1) + 4.dp.roundToPx()
+        val h = (0 until m.rowCount).sumOf { asc[it] + desc[it] } + gapY * (m.rowCount - 1)
+        val baseline = h / 2 + (size * 0.3f).sp.roundToPx()
+        layout(w, h, mapOf(FirstBaseline to baseline)) {
+            var y = 0
+            for (r in 0 until m.rowCount) {
+                var x = 2.dp.roundToPx()
+                for (c in 0 until m.colCount) {
+                    val p = ps[r * m.colCount + c]
+                    p.place(x + (colW[c] - p.width) / 2, y + asc[r] - p.baseline())
+                    x += colW[c] + gapX
+                }
+                y += asc[r] + desc[r] + gapY
+            }
         }
     }
 }

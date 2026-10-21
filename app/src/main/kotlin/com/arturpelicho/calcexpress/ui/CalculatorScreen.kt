@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.arturpelicho.calcexpress.AppSettings
 import com.arturpelicho.calcexpress.R
+import com.arturpelicho.calcexpress.core.Affine
 import com.arturpelicho.calcexpress.core.Analysis
 import com.arturpelicho.calcexpress.core.AngleUnit
 import com.arturpelicho.calcexpress.core.CalcException
@@ -35,9 +36,11 @@ import com.arturpelicho.calcexpress.core.Format
 import com.arturpelicho.calcexpress.core.GraphSpec
 import com.arturpelicho.calcexpress.core.Integral
 import com.arturpelicho.calcexpress.core.MathRow
+import com.arturpelicho.calcexpress.core.MatrixNode
 import com.arturpelicho.calcexpress.core.Outcome
 import com.arturpelicho.calcexpress.core.Sym
 import com.arturpelicho.calcexpress.core.SymKind
+import com.arturpelicho.calcexpress.core.Value
 import com.arturpelicho.calcexpress.core.allRows
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -126,6 +129,11 @@ class CalcState : KeyboardActions {
     override fun sqrt() = edit { sqrt() }
     override fun nthRoot() = edit { nthRoot() }
     override fun function(fn: Fn) = edit { function(fn) }
+    override fun matrix(rows: Int, cols: Int) = edit { matrix(rows, cols) }
+    fun addMatrixRow() = edit { this.addMatrixRow() }
+    fun addMatrixColumn() = edit { this.addMatrixColumn() }
+    fun removeMatrixRow() = edit { this.removeMatrixRow() }
+    fun removeMatrixColumn() = edit { this.removeMatrixColumn() }
     override fun integral() = edit { integral() }
     override fun derivative() = edit { derivative() }
     override fun backspace() = edit { backspace() }
@@ -185,15 +193,26 @@ class CalcState : KeyboardActions {
     }
 }
 
+/** Result as text: "= v" for a plain value, one "name = v" line per unknown otherwise. */
 @Composable
 fun outcomeText(o: Outcome): String = when (o) {
-    is Outcome.Value -> Format.number(o.value)
+    is Outcome.Value -> "= " + Format.number(o.value)
+    is Outcome.MatrixValue -> "= " + (0 until o.matrix.rows).joinToString("; ", "[", "]") { r ->
+        (0 until o.matrix.cols).joinToString("  ") { col -> Format.number(o.matrix.data[r * o.matrix.cols + col]) }
+    }
     is Outcome.Truth -> stringResource(if (o.holds) R.string.result_true else R.string.result_false)
     is Outcome.Function -> stringResource(R.string.result_function, o.variable)
     is Outcome.Solutions -> o.values.joinToString("\n") { (name, vals) ->
         if (vals.size == 1) "$name = ${Format.number(vals[0])}"
-        else vals.mapIndexed { i, v -> "$name${subscript(i + 1)} = ${Format.number(v)}" }.joinToString("\n")
+        else {
+            // Equal roots share one line: x₁ = x₂ = 3.
+            val indexed = vals.mapIndexed { i, v -> i + 1 to Format.number(v) }
+            indexed.groupBy({ it.second }, { it.first }).entries.joinToString("\n") { (text, idx) ->
+                idx.joinToString(" = ") { "$name${subscript(it)}" } + " = " + text
+            }
+        }
     }
+    is Outcome.Parametric -> o.values.joinToString("\n") { (name, form) -> "$name = ${affineText(form)}" }
     is Outcome.Error -> when (o.reason) {
         CalcException.Reason.SYNTAX -> stringResource(R.string.err_syntax)
         CalcException.Reason.EMPTY_CASE -> stringResource(R.string.err_empty_case)
@@ -203,8 +222,32 @@ fun outcomeText(o: Outcome): String = when (o) {
         CalcException.Reason.UNDERDETERMINED -> stringResource(R.string.err_underdetermined, o.detail)
         CalcException.Reason.NOT_EQUATION -> stringResource(R.string.err_not_equation)
         CalcException.Reason.INDEFINITE_INTEGRAL -> stringResource(R.string.err_indefinite)
+        CalcException.Reason.MATRIX_DIMENSIONS -> stringResource(R.string.err_matrix_dims)
+        CalcException.Reason.MATRIX_SINGULAR -> stringResource(R.string.err_matrix_singular)
+        CalcException.Reason.MATRIX_NOT_ALLOWED -> stringResource(R.string.err_matrix_not_allowed)
     }
 }
+
+/** 4 − 2y + 0.5z */
+private fun affineText(f: Affine): String {
+    val sb = StringBuilder()
+    if (f.constant != 0.0 || f.terms.isEmpty()) sb.append(Format.number(f.constant))
+    for ((name, k) in f.terms) {
+        val mag = kotlin.math.abs(k)
+        val coef = if (mag == 1.0) "" else Format.number(mag)
+        if (sb.isEmpty()) sb.append(if (k < 0) "−" else "") else sb.append(if (k < 0) " − " else " + ")
+        sb.append(coef).append(name)
+    }
+    return sb.toString()
+}
+
+/** A matrix result as a row "= [grid]" so it renders like the input. */
+fun matrixRow(m: Value.Mat): MathRow = MathRow(
+    mutableListOf(
+        Sym(SymKind.EQUALS, "="),
+        MatrixNode(m.rows, m.cols, MutableList(m.rows * m.cols) { MathRow(mutableListOf(Sym(SymKind.DIGIT, Format.number(m.data[it])))) }),
+    ),
+)
 
 private fun subscript(n: Int) = n.toString().map { "₀₁₂₃₄₅₆₇₈₉"[it - '0'] }.joinToString("")
 
@@ -261,6 +304,8 @@ fun CalculatorScreen(state: CalcState, settings: AppSettings, modifier: Modifier
                 KeyDef("▶", KeyKind.TOOL) { state.right() },
                 KeyDef("⇥□", KeyKind.TOOL) { state.nextCase() },
                 KeyDef("📈", KeyKind.TOOL, enabled = graph != null || state.hasEquation, highlighted = state.showGraph, description = stringResource(R.string.graph)) { state.toggleGraph() },
+                if (state.editor.inMatrix) KeyDef("+↓", KeyKind.TOOL, description = stringResource(R.string.matrix_row), onLongClick = { state.removeMatrixRow() }) { state.addMatrixRow() } else null,
+                if (state.editor.inMatrix) KeyDef("+→", KeyKind.TOOL, description = stringResource(R.string.matrix_col), onLongClick = { state.removeMatrixColumn() }) { state.addMatrixColumn() } else null,
                 if (state.canReorder) KeyDef("⇅∫", KeyKind.TOOL, description = stringResource(R.string.reorder)) { state.reorder() } else null,
             ),
             modifier = Modifier.weight(0.64f),
@@ -278,8 +323,9 @@ private fun ResultLine(state: CalcState) {
         when {
             state.computing -> CircularProgressIndicator(Modifier.padding(4.dp))
             msg != null -> Text(stringResource(msg), style = mathStyle(font, 16f, c.muted), textAlign = TextAlign.End)
+            o is Outcome.MatrixValue -> StaticMath(listOf(matrixRow(o.matrix)), 24f, Modifier.horizontalScroll(rememberScrollState()))
             o != null -> Text(
-                (if (o is Outcome.Error) "" else "= ") + outcomeText(o),
+                outcomeText(o),
                 style = mathStyle(font, if (o is Outcome.Error) 17f else 30f, if (o is Outcome.Error) c.error else c.accent),
                 textAlign = TextAlign.End,
                 modifier = Modifier.horizontalScroll(rememberScrollState()),

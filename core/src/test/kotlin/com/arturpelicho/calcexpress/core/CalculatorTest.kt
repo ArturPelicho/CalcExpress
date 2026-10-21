@@ -109,10 +109,42 @@ class CalculatorTest {
     }
 
     @Test fun underdetermined() {
-        val e = Editor(); e.type("x+y=3")
+        val e = Editor(); e.type("x*x*y=3")
         val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
         assertIs<Outcome.Error>(o)
         assertEquals(CalcException.Reason.UNDERDETERMINED, o.reason)
+    }
+
+    @Test fun linearUnderdeterminedSolvesForXInTermsOfY() {
+        val e = Editor(); e.type("2y+x=3")
+        val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
+        assertIs<Outcome.Parametric>(o, "got $o")
+        val (name, form) = o.values.single()
+        assertEquals("x", name)
+        near(3.0, form.constant)
+        assertEquals("y", form.terms.single().first)
+        near(-2.0, form.terms.single().second)
+    }
+
+    @Test fun twoEquationsThreeUnknownsSolveXAndY() {
+        val e = Editor(); e.type("x+y+z=6")
+        e.addEquation()
+        e.type("x"); e.moveRight(); e.moveRight(); e.moveRight(); e.type("y+z")
+        // x + y + z = 6, x = y + z  →  x = 3, y = 3 − z
+        val o = Analysis.evaluate(e.lines, AngleUnit.RAD)
+        assertIs<Outcome.Parametric>(o, "got $o")
+        val m = o.values.toMap()
+        near(3.0, m.getValue("x").constant)
+        assertTrue(m.getValue("x").terms.isEmpty())
+        near(3.0, m.getValue("y").constant)
+        near(-1.0, m.getValue("y").terms.single().second)
+    }
+
+    @Test fun dependentLinearSystemIsParametric() {
+        val e = Editor(); e.type("x+y=2")
+        e.addEquation()
+        e.type("2x+2y"); e.moveRight(); e.moveRight(); e.moveRight(); e.type("4")
+        assertIs<Outcome.Parametric>(Analysis.evaluate(e.lines, AngleUnit.RAD))
     }
 
     @Test fun functionOfOneVariable() {

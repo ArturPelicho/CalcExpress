@@ -64,6 +64,7 @@ import com.arturpelicho.calcexpress.core.Formula
 import com.arturpelicho.calcexpress.core.FormulaCategory
 import com.arturpelicho.calcexpress.core.Formulas
 import com.arturpelicho.calcexpress.core.MeasureUnit
+import com.arturpelicho.calcexpress.core.Outcome
 import com.arturpelicho.calcexpress.core.UnitCategory
 import com.arturpelicho.calcexpress.core.UnitSystem
 import com.arturpelicho.calcexpress.core.Units
@@ -179,7 +180,9 @@ private fun CalculatorSections(calc: CalcState, onOpen: () -> Unit) {
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { calc.load(h.lines); onOpen() }.padding(vertical = 6.dp),
             ) {
                 Box(Modifier.horizontalScroll(rememberScrollState())) { StaticMath(h.lines, 18f) }
-                Text("= " + outcomeText(h.outcome), color = c.accent, style = MaterialTheme.typography.bodyLarge)
+                val o = h.outcome
+                if (o is Outcome.MatrixValue) StaticMath(listOf(matrixRow(o.matrix)), 16f)
+                else Text(outcomeText(o), color = c.accent, style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(color = c.caseBorder.copy(alpha = 0.25f))
         }

@@ -124,6 +124,7 @@ interface KeyboardActions {
     fun sqrt()
     fun nthRoot()
     fun function(fn: Fn)
+    fun matrix(rows: Int, cols: Int)
     fun integral()
     fun derivative()
     fun backspace()
@@ -164,6 +165,7 @@ fun MainKeyboard(
                 KeyDef("ln", KeyKind.FUNCTION, hint = "eˣ", onLongClick = { actions.function(Fn.EXP) }) { actions.function(Fn.LN) },
                 KeyDef("log", KeyKind.FUNCTION, hint = "|x|", onLongClick = { actions.function(Fn.ABS) }) { actions.function(Fn.LOG) },
                 KeyDef("√", KeyKind.FUNCTION, hint = "ⁿ√", onLongClick = { actions.nthRoot() }) { actions.sqrt() },
+                KeyDef("[⋮⋮]", KeyKind.FUNCTION, hint = "3×3", onLongClick = { actions.matrix(3, 3) }) { actions.matrix(2, 2) },
             ),
             19f, Modifier.weight(1f),
         )
@@ -178,6 +180,7 @@ fun MainKeyboard(
                     if (inPower) "x^□" else "x²", KeyKind.FUNCTION, hint = "^□", highlighted = inPower,
                     onLongClick = { actions.togglePower() },
                 ) { actions.square() },
+                KeyDef("det", KeyKind.FUNCTION, hint = "Aᵀ", onLongClick = { actions.function(Fn.TRANSPOSE) }) { actions.function(Fn.DET) },
             ),
             19f, Modifier.weight(1f),
         )

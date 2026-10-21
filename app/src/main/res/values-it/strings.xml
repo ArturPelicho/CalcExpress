@@ -57,6 +57,11 @@
     <string name="err_underdetermined">Incognite %1$s: aggiungi un’altra equazione (⊕=)</string>
     <string name="err_not_equation">Ogni riga di un sistema richiede =</string>
     <string name="err_indefinite">Inserisci i limiti di integrazione</string>
+    <string name="err_matrix_dims">Dimensioni delle matrici incompatibili</string>
+    <string name="err_matrix_singular">Matrice singolare: nessuna inversa</string>
+    <string name="err_matrix_not_allowed">Qui non si può usare una matrice</string>
+    <string name="matrix_row">Aggiungi riga (tieni premuto per rimuovere)</string>
+    <string name="matrix_col">Aggiungi colonna (tieni premuto per rimuovere)</string>
     <string name="result_true">Vero</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Funzione di %1$s</string>

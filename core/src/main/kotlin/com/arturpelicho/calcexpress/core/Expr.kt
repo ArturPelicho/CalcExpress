@@ -37,7 +37,10 @@ enum class AngleUnit(val label: String) {
 }
 
 class CalcException(val reason: Reason, val detail: String = "") : Exception("$reason $detail") {
-    enum class Reason { SYNTAX, EMPTY_CASE, DOMAIN, UNKNOWN_VARIABLE, NO_SOLUTION, UNDERDETERMINED, NOT_EQUATION, INDEFINITE_INTEGRAL }
+    enum class Reason {
+        SYNTAX, EMPTY_CASE, DOMAIN, UNKNOWN_VARIABLE, NO_SOLUTION, UNDERDETERMINED, NOT_EQUATION, INDEFINITE_INTEGRAL,
+        MATRIX_DIMENSIONS, MATRIX_SINGULAR, MATRIX_NOT_ALLOWED,
+    }
 }
 
 class EvalContext(val angle: AngleUnit, val values: Map<String, Double> = emptyMap()) {
@@ -48,6 +51,9 @@ class EvalContext(val angle: AngleUnit, val values: Map<String, Double> = emptyM
 /** Evaluable expression tree produced by [Parser]. */
 sealed class Expr {
     abstract fun eval(ctx: EvalContext): Double
+
+    /** Evaluation that also allows matrices; scalar-only nodes just wrap [eval]. */
+    open fun evalValue(ctx: EvalContext): Value = Value.Scalar(eval(ctx))
 
     /** Variables that must come from outside (bound integration/derivative variables excluded). */
     abstract fun freeVariables(): Set<String>
@@ -65,13 +71,46 @@ sealed class Expr {
 
     data class Neg(val e: Expr) : Expr() {
         override fun eval(ctx: EvalContext) = -e.eval(ctx)
+        override fun evalValue(ctx: EvalContext): Value = when (val v = e.evalValue(ctx)) {
+            is Value.Scalar -> Value.Scalar(-v.v)
+            is Value.Mat -> MatrixOps.scale(v, -1.0)
+        }
         override fun freeVariables() = e.freeVariables()
     }
 
     data class Bin(val op: Char, val a: Expr, val b: Expr) : Expr() {
-        override fun eval(ctx: EvalContext): Double {
-            val x = a.eval(ctx)
-            val y = b.eval(ctx)
+        override fun evalValue(ctx: EvalContext): Value {
+            val x = a.evalValue(ctx)
+            val y = b.evalValue(ctx)
+            if (x is Value.Scalar && y is Value.Scalar) return Value.Scalar(scalarOp(x.v, y.v))
+            return when (op) {
+                '+', '-' -> {
+                    if (x !is Value.Mat || y !is Value.Mat) throw CalcException(CalcException.Reason.MATRIX_DIMENSIONS)
+                    MatrixOps.add(x, y, if (op == '+') 1.0 else -1.0)
+                }
+                '*' -> when {
+                    x is Value.Mat && y is Value.Mat -> MatrixOps.multiply(x, y)
+                    x is Value.Mat -> MatrixOps.scale(x, y.scalar())
+                    else -> MatrixOps.scale(y as Value.Mat, x.scalar())
+                }
+                '/' -> when {
+                    x is Value.Mat && y is Value.Scalar -> MatrixOps.scale(x, 1.0 / nonZero(y.v))
+                    x is Value.Mat && y is Value.Mat -> MatrixOps.multiply(x, MatrixOps.inverse(y))
+                    else -> MatrixOps.scale(MatrixOps.inverse(y as Value.Mat), x.scalar())
+                }
+                '^' -> {
+                    if (x !is Value.Mat) throw CalcException(CalcException.Reason.MATRIX_NOT_ALLOWED)
+                    MatrixOps.power(x, y.scalar())
+                }
+                else -> error("op $op")
+            }
+        }
+
+        private fun nonZero(v: Double) = if (v == 0.0) throw CalcException(CalcException.Reason.DOMAIN, "÷0") else v
+
+        override fun eval(ctx: EvalContext): Double = scalarOp(a.eval(ctx), b.eval(ctx))
+
+        private fun scalarOp(x: Double, y: Double): Double {
             return when (op) {
                 '+' -> x + y
                 '-' -> x - y
@@ -85,7 +124,23 @@ sealed class Expr {
     }
 
     data class Call(val fn: Fn, val arg: Expr) : Expr() {
+        override fun evalValue(ctx: EvalContext): Value =
+            if (fn == Fn.TRANSPOSE) {
+                when (val m = arg.evalValue(ctx)) {
+                    is Value.Mat -> MatrixOps.transpose(m)
+                    is Value.Scalar -> m
+                }
+            } else Value.Scalar(eval(ctx))
+
         override fun eval(ctx: EvalContext): Double {
+            if (fn.isMatrixFn) {
+                val m = arg.evalValue(ctx)
+                return when (fn) {
+                    Fn.DET -> if (m is Value.Mat) MatrixOps.determinant(m) else m.scalar()
+                    Fn.TRACE -> if (m is Value.Mat) MatrixOps.trace(m) else m.scalar()
+                    else -> m.scalar() // transpose of a matrix is not a number
+                }
+            }
             val v = arg.eval(ctx)
             val r = when (fn) {
                 Fn.SIN -> sin(ctx.angle.toRadians(v))
@@ -105,6 +160,7 @@ sealed class Expr {
                 Fn.LOG -> log10(v)
                 Fn.EXP -> exp(v)
                 Fn.ABS -> abs(v)
+                Fn.DET, Fn.TRANSPOSE, Fn.TRACE -> v
             }
             return cleanTrig(fn, r)
         }
@@ -122,6 +178,14 @@ sealed class Expr {
             return if (x < 0 && isOddInteger(n)) -(-x).pow(1.0 / n) else x.pow(1.0 / n)
         }
         override fun freeVariables() = radicand.freeVariables() + (index?.freeVariables() ?: emptySet())
+    }
+
+    data class MatrixE(val rows: Int, val cols: Int, val cells: List<Expr>) : Expr() {
+        override fun eval(ctx: EvalContext): Double =
+            if (rows == 1 && cols == 1) cells[0].eval(ctx) else throw CalcException(CalcException.Reason.MATRIX_NOT_ALLOWED)
+        override fun evalValue(ctx: EvalContext): Value =
+            Value.Mat(rows, cols, DoubleArray(cells.size) { cells[it].evalValue(ctx).scalar() })
+        override fun freeVariables() = cells.flatMap { it.freeVariables() }.toSet()
     }
 
     data class Factorial(val e: Expr) : Expr() {

@@ -57,6 +57,11 @@
     <string name="err_underdetermined">Unbekannte %1$s: weitere Gleichung hinzufügen (⊕=)</string>
     <string name="err_not_equation">Jede Zeile eines Systems braucht =</string>
     <string name="err_indefinite">Integrationsgrenzen ausfüllen</string>
+    <string name="err_matrix_dims">Matrixgrößen passen nicht</string>
+    <string name="err_matrix_singular">Singuläre Matrix: keine Inverse</string>
+    <string name="err_matrix_not_allowed">Hier ist keine Matrix erlaubt</string>
+    <string name="matrix_row">Zeile hinzufügen (halten zum Entfernen)</string>
+    <string name="matrix_col">Spalte hinzufügen (halten zum Entfernen)</string>
     <string name="result_true">Wahr</string>
     <string name="result_false">Falsch</string>
     <string name="result_function">Funktion von %1$s</string>

@@ -13,6 +13,8 @@ enum class FormulaCategory(val title: Tr) {
     MECHANICAL(Tr("Mechanical engineering", "Engenharia mecânica", "Génie mécanique", "Maschinenbau", "Ingegneria meccanica", "Ingeniería mecánica")),
     COMPUTER(Tr("Computer engineering", "Engenharia informática", "Informatique", "Informatik", "Ingegneria informatica", "Ingeniería informática")),
     FLUIDS(Tr("Fluids", "Fluidos", "Fluides", "Fluide", "Fluidi", "Fluidos")),
+    ELASTICITY(Tr("Elasticity & strength of materials", "Elasticidade e resistência dos materiais", "Élasticité et RDM", "Elastizität & Festigkeitslehre", "Elasticità e scienza delle costruzioni", "Elasticidad y resistencia de materiales")),
+    MATRICES(Tr("Matrices", "Matrizes", "Matrices", "Matrizen", "Matrici", "Matrices")),
     ELECTRO(Tr("Electrotechnics", "Eletrotecnia", "Électrotechnique", "Elektrotechnik", "Elettrotecnica", "Electrotecnia")),
 }
 
@@ -52,6 +54,9 @@ class RowBuilder {
     fun fn(f: Fn, block: RowBuilder.() -> Unit) { row.items += FuncCall(f, build(block)) }
     fun integral(lo: RowBuilder.() -> Unit, hi: RowBuilder.() -> Unit, variable: String, body: RowBuilder.() -> Unit) {
         row.items += Integral(build(lo), build(hi), build(body), build { v(variable) })
+    }
+    fun matrix(rows: Int, cols: Int, cells: List<RowBuilder.() -> Unit> = emptyList()) {
+        row.items += MatrixNode(rows, cols, MutableList(rows * cols) { i -> cells.getOrNull(i)?.let { build(it) } ?: MathRow() })
     }
     fun derivative(variable: String, body: RowBuilder.() -> Unit) { row.items += Derivative(build { v(variable) }, build(body)) }
 
@@ -270,6 +275,215 @@ object Formulas {
             "p·V = n·R·T",
             listOf(FormulaVar("p", "Pa"), FormulaVar("V", "m³"), FormulaVar("n", "mol"), FormulaVar("T", "K")),
         ) { line { slot("p"); times(); slot("V"); eq(); slot("n"); times(); num("8.314462618"); times(); slot("T") } },
+        // ---------------------------------------------------------------- elasticity
+        Formula(
+            "hooke_stress", FormulaCategory.ELASTICITY,
+            Tr("Hooke's law (stress–strain)", "Lei de Hooke (tensão–deformação)", "Loi de Hooke (contrainte–déformation)", "Hookesches Gesetz (Spannung–Dehnung)", "Legge di Hooke (tensione–deformazione)", "Ley de Hooke (tensión–deformación)"),
+            "σ = E·ε",
+            listOf(FormulaVar("σ", "Pa", "psi"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("σ"); eq(); slot("E"); times(); slot("ε") } },
+        Formula(
+            "shear_hooke", FormulaCategory.ELASTICITY,
+            Tr("Hooke's law in shear", "Lei de Hooke ao corte", "Loi de Hooke en cisaillement", "Hookesches Gesetz für Schub", "Legge di Hooke a taglio", "Ley de Hooke a cortante"),
+            "τ = G·γ",
+            listOf(FormulaVar("τ", "Pa", "psi"), FormulaVar("G", "Pa", "psi"), FormulaVar("γ", "rad")),
+        ) { line { slot("τ"); eq(); slot("G"); times(); slot("γ") } },
+        Formula(
+            "strain", FormulaCategory.ELASTICITY,
+            Tr("Normal strain", "Extensão (deformação normal)", "Déformation normale", "Dehnung", "Deformazione normale", "Deformación unitaria"),
+            "ε = ΔL/L₀",
+            listOf(FormulaVar("ΔL", "m", "in"), FormulaVar("L₀", "m", "in")),
+        ) { line { slot("ε"); eq(); frac({ slot("ΔL") }, { slot("L₀") }) } },
+        Formula(
+            "poisson", FormulaCategory.ELASTICITY,
+            Tr("Poisson's ratio", "Coeficiente de Poisson", "Coefficient de Poisson", "Querkontraktionszahl", "Coefficiente di Poisson", "Coeficiente de Poisson"),
+            "ν = −ε_t/ε_l",
+        ) { line { slot("ν"); eq(); minus(); frac({ slot("εₜ") }, { slot("εₗ") }) } },
+        Formula(
+            "shear_modulus", FormulaCategory.ELASTICITY,
+            Tr("Shear modulus from E and ν", "Módulo de distorção (E, ν)", "Module de cisaillement (E, ν)", "Schubmodul aus E und ν", "Modulo di taglio (E, ν)", "Módulo de cortante (E, ν)"),
+            "G = E/(2(1 + ν))",
+            listOf(FormulaVar("G", "Pa", "psi"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("G"); eq(); frac({ slot("E") }, { num("2"); group { num("1"); plus(); slot("ν") } }) } },
+        Formula(
+            "bulk_modulus", FormulaCategory.ELASTICITY,
+            Tr("Bulk modulus from E and ν", "Módulo de compressibilidade (E, ν)", "Module de compressibilité (E, ν)", "Kompressionsmodul aus E und ν", "Modulo di compressibilità (E, ν)", "Módulo de compresibilidad (E, ν)"),
+            "K = E/(3(1 − 2ν))",
+            listOf(FormulaVar("K", "Pa", "psi"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("K"); eq(); frac({ slot("E") }, { num("3"); group { num("1"); minus(); num("2"); slot("ν") } }) } },
+        Formula(
+            "lame", FormulaCategory.ELASTICITY,
+            Tr("Lamé's first parameter", "Primeiro parâmetro de Lamé", "Premier coefficient de Lamé", "Erste Lamé-Konstante", "Primo parametro di Lamé", "Primer parámetro de Lamé"),
+            "λ = E·ν/((1 + ν)(1 − 2ν))",
+            listOf(FormulaVar("λ", "Pa", "psi"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("λ"); eq(); frac({ slot("E"); times(); slot("ν") }, { group { num("1"); plus(); slot("ν") }; group { num("1"); minus(); num("2"); slot("ν") } }) } },
+        Formula(
+            "hooke_3d", FormulaCategory.ELASTICITY,
+            Tr("Generalised Hooke's law (3D)", "Lei de Hooke generalizada (3D)", "Loi de Hooke généralisée (3D)", "Verallgemeinertes Hookesches Gesetz (3D)", "Legge di Hooke generalizzata (3D)", "Ley de Hooke generalizada (3D)"),
+            "εx = (σx − ν(σy + σz))/E",
+            listOf(FormulaVar("σ", "Pa", "psi"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("εx"); eq(); frac({ slot("σx"); minus(); slot("ν"); group { slot("σy"); plus(); slot("σz") } }, { slot("E") }) } },
+        Formula(
+            "thermal_strain", FormulaCategory.ELASTICITY,
+            Tr("Thermal strain", "Deformação térmica", "Déformation thermique", "Wärmedehnung", "Deformazione termica", "Deformación térmica"),
+            "ε = α·ΔT",
+            listOf(FormulaVar("α", "1/K", "1/°F"), FormulaVar("ΔT", "K", "°F")),
+        ) { line { slot("ε"); eq(); slot("α"); times(); slot("ΔT") } },
+        Formula(
+            "thermal_stress", FormulaCategory.ELASTICITY,
+            Tr("Thermal stress (restrained bar)", "Tensão térmica (barra impedida)", "Contrainte thermique (barre bridée)", "Wärmespannung (eingespannter Stab)", "Tensione termica (barra vincolata)", "Tensión térmica (barra empotrada)"),
+            "σ = E·α·ΔT",
+            listOf(FormulaVar("σ", "Pa", "psi"), FormulaVar("E", "Pa", "psi"), FormulaVar("α", "1/K", "1/°F"), FormulaVar("ΔT", "K", "°F")),
+        ) { line { slot("σ"); eq(); slot("E"); times(); slot("α"); times(); slot("ΔT") } },
+        Formula(
+            "axial_deformation", FormulaCategory.ELASTICITY,
+            Tr("Axial deformation of a bar", "Deformação axial de uma barra", "Allongement d'une barre", "Längenänderung eines Stabes", "Allungamento di una barra", "Deformación axial de una barra"),
+            "δ = F·L/(A·E)",
+            listOf(FormulaVar("δ", "m", "in"), FormulaVar("F", "N", "lbf"), FormulaVar("L", "m", "in"), FormulaVar("A", "m²", "in²"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("δ"); eq(); frac({ slot("F"); times(); slot("L") }, { slot("A"); times(); slot("E") }) } },
+        Formula(
+            "strain_energy", FormulaCategory.ELASTICITY,
+            Tr("Strain energy density", "Densidade de energia de deformação", "Densité d'énergie de déformation", "Formänderungsenergiedichte", "Densità di energia di deformazione", "Densidad de energía de deformación"),
+            "u = σ²/(2E)",
+            listOf(FormulaVar("u", "J/m³", "psi"), FormulaVar("σ", "Pa", "psi"), FormulaVar("E", "Pa", "psi")),
+        ) { line { slot("u"); eq(); frac({ slot("σ"); sq() }, { num("2"); slot("E") }) } },
+        Formula(
+            "bending_stress", FormulaCategory.ELASTICITY,
+            Tr("Bending stress (Navier)", "Tensão de flexão (Navier)", "Contrainte de flexion (Navier)", "Biegespannung (Navier)", "Tensione di flessione (Navier)", "Tensión de flexión (Navier)"),
+            "σ = M·y/I",
+            listOf(FormulaVar("σ", "Pa", "psi"), FormulaVar("M", "N·m", "lbf·in"), FormulaVar("y", "m", "in"), FormulaVar("I", "m⁴", "in⁴")),
+        ) { line { slot("σ"); eq(); frac({ slot("M"); times(); slot("y") }, { slot("I") }) } },
+        Formula(
+            "torsion_stress", FormulaCategory.ELASTICITY,
+            Tr("Torsional shear stress", "Tensão de corte por torção", "Contrainte de torsion", "Torsionsspannung", "Tensione tangenziale da torsione", "Tensión cortante por torsión"),
+            "τ = T·r/J",
+            listOf(FormulaVar("τ", "Pa", "psi"), FormulaVar("T", "N·m", "lbf·in"), FormulaVar("r", "m", "in"), FormulaVar("J", "m⁴", "in⁴")),
+        ) { line { slot("τ"); eq(); frac({ slot("T"); times(); slot("r") }, { slot("J") }) } },
+        Formula(
+            "twist_angle", FormulaCategory.ELASTICITY,
+            Tr("Angle of twist", "Ângulo de torção", "Angle de torsion", "Verdrehwinkel", "Angolo di torsione", "Ángulo de torsión"),
+            "θ = T·L/(G·J)",
+            listOf(FormulaVar("θ", "rad"), FormulaVar("T", "N·m", "lbf·in"), FormulaVar("L", "m", "in"), FormulaVar("G", "Pa", "psi"), FormulaVar("J", "m⁴", "in⁴")),
+        ) { line { slot("θ"); eq(); frac({ slot("T"); times(); slot("L") }, { slot("G"); times(); slot("J") }) } },
+        Formula(
+            "cantilever", FormulaCategory.ELASTICITY,
+            Tr("Cantilever tip deflection (end load)", "Flecha de consola (carga na ponta)", "Flèche d'une console (charge en bout)", "Kragträger-Durchbiegung (Endlast)", "Freccia di una mensola (carico in punta)", "Flecha de voladizo (carga en el extremo)"),
+            "δ = F·L³/(3E·I)",
+            listOf(FormulaVar("δ", "m", "in"), FormulaVar("F", "N", "lbf"), FormulaVar("L", "m", "in"), FormulaVar("E", "Pa", "psi"), FormulaVar("I", "m⁴", "in⁴")),
+        ) { line { slot("δ"); eq(); frac({ slot("F"); times(); slot("L"); pow { num("3") } }, { num("3"); slot("E"); times(); slot("I") }) } },
+        Formula(
+            "simply_supported", FormulaCategory.ELASTICITY,
+            Tr("Simply supported beam, central load", "Viga simplesmente apoiada, carga a meio vão", "Poutre sur deux appuis, charge centrée", "Einfeldträger, Einzellast in Feldmitte", "Trave appoggiata, carico in mezzeria", "Viga simplemente apoyada, carga central"),
+            "δ = F·L³/(48E·I)",
+            listOf(FormulaVar("δ", "m", "in"), FormulaVar("F", "N", "lbf"), FormulaVar("L", "m", "in"), FormulaVar("E", "Pa", "psi"), FormulaVar("I", "m⁴", "in⁴")),
+        ) { line { slot("δ"); eq(); frac({ slot("F"); times(); slot("L"); pow { num("3") } }, { num("48"); slot("E"); times(); slot("I") }) } },
+        Formula(
+            "udl_beam", FormulaCategory.ELASTICITY,
+            Tr("Simply supported beam, uniform load", "Viga simplesmente apoiada, carga uniforme", "Poutre sur deux appuis, charge répartie", "Einfeldträger, Streckenlast", "Trave appoggiata, carico distribuito", "Viga simplemente apoyada, carga uniforme"),
+            "δ = 5w·L⁴/(384E·I)",
+            listOf(FormulaVar("δ", "m", "in"), FormulaVar("w", "N/m", "lbf/in"), FormulaVar("L", "m", "in"), FormulaVar("E", "Pa", "psi"), FormulaVar("I", "m⁴", "in⁴")),
+        ) { line { slot("δ"); eq(); frac({ num("5"); slot("w"); times(); slot("L"); pow { num("4") } }, { num("384"); slot("E"); times(); slot("I") }) } },
+        Formula(
+            "euler_buckling", FormulaCategory.ELASTICITY,
+            Tr("Euler buckling load", "Carga crítica de Euler (encurvadura)", "Charge critique d'Euler (flambement)", "Euler-Knicklast", "Carico critico di Eulero", "Carga crítica de Euler (pandeo)"),
+            "P = π²·E·I/(K·L)²",
+            listOf(FormulaVar("P", "N", "lbf"), FormulaVar("E", "Pa", "psi"), FormulaVar("I", "m⁴", "in⁴"), FormulaVar("L", "m", "in")),
+        ) { line { slot("P"); eq(); frac({ pi(); sq(); slot("E"); times(); slot("I") }, { group { slot("K"); times(); slot("L") }; sq() }) } },
+        Formula(
+            "principal_1", FormulaCategory.ELASTICITY,
+            Tr("Principal stress σ₁ (plane stress)", "Tensão principal σ₁ (estado plano)", "Contrainte principale σ₁ (plane)", "Hauptspannung σ₁ (eben)", "Tensione principale σ₁ (piana)", "Tensión principal σ₁ (plana)"),
+            "σ₁ = (σx + σy)/2 + √(((σx − σy)/2)² + τxy²)",
+            listOf(FormulaVar("σ, τ", "Pa", "psi")),
+        ) {
+            line {
+                slot("σ₁"); eq(); frac({ slot("σx"); plus(); slot("σy") }, { num("2") }); plus()
+                sqrt { group { frac({ slot("σx"); minus(); slot("σy") }, { num("2") }) }; sq(); plus(); slot("τxy"); sq() }
+            }
+        },
+        Formula(
+            "principal_2", FormulaCategory.ELASTICITY,
+            Tr("Principal stress σ₂ (plane stress)", "Tensão principal σ₂ (estado plano)", "Contrainte principale σ₂ (plane)", "Hauptspannung σ₂ (eben)", "Tensione principale σ₂ (piana)", "Tensión principal σ₂ (plana)"),
+            "σ₂ = (σx + σy)/2 − √(((σx − σy)/2)² + τxy²)",
+            listOf(FormulaVar("σ, τ", "Pa", "psi")),
+        ) {
+            line {
+                slot("σ₂"); eq(); frac({ slot("σx"); plus(); slot("σy") }, { num("2") }); minus()
+                sqrt { group { frac({ slot("σx"); minus(); slot("σy") }, { num("2") }) }; sq(); plus(); slot("τxy"); sq() }
+            }
+        },
+        Formula(
+            "max_shear", FormulaCategory.ELASTICITY,
+            Tr("Maximum in-plane shear stress", "Tensão de corte máxima no plano", "Cisaillement maximal dans le plan", "Maximale Schubspannung (eben)", "Massima tensione tangenziale nel piano", "Tensión cortante máxima en el plano"),
+            "τmax = √(((σx − σy)/2)² + τxy²)",
+            listOf(FormulaVar("σ, τ", "Pa", "psi")),
+        ) { line { slot("τmax"); eq(); sqrt { group { frac({ slot("σx"); minus(); slot("σy") }, { num("2") }) }; sq(); plus(); slot("τxy"); sq() } } },
+        Formula(
+            "von_mises", FormulaCategory.ELASTICITY,
+            Tr("Von Mises stress (plane stress)", "Tensão de von Mises (estado plano)", "Contrainte de von Mises (plane)", "Von-Mises-Vergleichsspannung (eben)", "Tensione di von Mises (piana)", "Tensión de von Mises (plana)"),
+            "σvm = √(σx² − σx·σy + σy² + 3τxy²)",
+            listOf(FormulaVar("σ, τ", "Pa", "psi")),
+        ) { line { slot("σvm"); eq(); sqrt { slot("σx"); sq(); minus(); slot("σx"); times(); slot("σy"); plus(); slot("σy"); sq(); plus(); num("3"); slot("τxy"); sq() } } },
+        Formula(
+            "tresca", FormulaCategory.ELASTICITY,
+            Tr("Tresca equivalent stress", "Tensão equivalente de Tresca", "Contrainte équivalente de Tresca", "Tresca-Vergleichsspannung", "Tensione equivalente di Tresca", "Tensión equivalente de Tresca"),
+            "σT = σ₁ − σ₃",
+            listOf(FormulaVar("σ", "Pa", "psi")),
+        ) { line { slot("σT"); eq(); slot("σ₁"); minus(); slot("σ₃") } },
+        Formula(
+            "safety_factor", FormulaCategory.ELASTICITY,
+            Tr("Safety factor", "Coeficiente de segurança", "Coefficient de sécurité", "Sicherheitsfaktor", "Coefficiente di sicurezza", "Factor de seguridad"),
+            "n = σy/σ",
+            listOf(FormulaVar("σ", "Pa", "psi")),
+        ) { line { slot("n"); eq(); frac({ slot("σ_y") }, { slot("σ") }) } },
+        Formula(
+            "i_rect", FormulaCategory.ELASTICITY,
+            Tr("Second moment of area, rectangle", "Momento de inércia, retângulo", "Moment quadratique, rectangle", "Flächenträgheitsmoment, Rechteck", "Momento d'inerzia, rettangolo", "Momento de inercia, rectángulo"),
+            "I = b·h³/12",
+            listOf(FormulaVar("I", "m⁴", "in⁴"), FormulaVar("b, h", "m", "in")),
+        ) { line { slot("I"); eq(); frac({ slot("b"); times(); slot("h"); pow { num("3") } }, { num("12") }) } },
+        Formula(
+            "i_circle", FormulaCategory.ELASTICITY,
+            Tr("Second moment of area, solid circle", "Momento de inércia, círculo", "Moment quadratique, disque", "Flächenträgheitsmoment, Kreis", "Momento d'inerzia, cerchio", "Momento de inercia, círculo"),
+            "I = π·d⁴/64",
+            listOf(FormulaVar("I", "m⁴", "in⁴"), FormulaVar("d", "m", "in")),
+        ) { line { slot("I"); eq(); frac({ pi(); slot("d"); pow { num("4") } }, { num("64") }) } },
+        Formula(
+            "j_circle", FormulaCategory.ELASTICITY,
+            Tr("Polar moment of area, solid shaft", "Momento polar de inércia, veio maciço", "Moment polaire, arbre plein", "Polares Flächenträgheitsmoment, Vollwelle", "Momento polare, albero pieno", "Momento polar, eje macizo"),
+            "J = π·d⁴/32",
+            listOf(FormulaVar("J", "m⁴", "in⁴"), FormulaVar("d", "m", "in")),
+        ) { line { slot("J"); eq(); frac({ pi(); slot("d"); pow { num("4") } }, { num("32") }) } },
+        // ---------------------------------------------------------------- matrices
+        Formula(
+            "det2", FormulaCategory.MATRICES,
+            Tr("Determinant 2×2", "Determinante 2×2", "Déterminant 2×2", "Determinante 2×2", "Determinante 2×2", "Determinante 2×2"),
+            "det [□ □; □ □]",
+        ) { line { fn(Fn.DET) { matrix(2, 2) } } },
+        Formula(
+            "det3", FormulaCategory.MATRICES,
+            Tr("Determinant 3×3", "Determinante 3×3", "Déterminant 3×3", "Determinante 3×3", "Determinante 3×3", "Determinante 3×3"),
+            "det [3×3]",
+        ) { line { fn(Fn.DET) { matrix(3, 3) } } },
+        Formula(
+            "inverse3", FormulaCategory.MATRICES,
+            Tr("Inverse 3×3", "Inversa 3×3", "Inverse 3×3", "Inverse 3×3", "Inversa 3×3", "Inversa 3×3"),
+            "A⁻¹",
+        ) { line { matrix(3, 3); pow { minus(); num("1") } } },
+        Formula(
+            "product", FormulaCategory.MATRICES,
+            Tr("Matrix product 2×2 · 2×2", "Produto de matrizes 2×2 · 2×2", "Produit de matrices 2×2 · 2×2", "Matrixprodukt 2×2 · 2×2", "Prodotto di matrici 2×2 · 2×2", "Producto de matrices 2×2 · 2×2"),
+            "A·B",
+        ) { line { matrix(2, 2); times(); matrix(2, 2) } },
+        Formula(
+            "linear_system", FormulaCategory.MATRICES,
+            Tr("Linear system X = A⁻¹·B (3×3)", "Sistema linear X = A⁻¹·B (3×3)", "Système linéaire X = A⁻¹·B (3×3)", "Lineares System X = A⁻¹·B (3×3)", "Sistema lineare X = A⁻¹·B (3×3)", "Sistema lineal X = A⁻¹·B (3×3)"),
+            "A⁻¹·B",
+        ) { line { matrix(3, 3); pow { minus(); num("1") }; times(); matrix(3, 1) } },
+        Formula(
+            "eigen2", FormulaCategory.MATRICES,
+            Tr("Eigenvalues 2×2 (det(A − λI) = 0)", "Valores próprios 2×2 (det(A − λI) = 0)", "Valeurs propres 2×2 (det(A − λI) = 0)", "Eigenwerte 2×2 (det(A − λI) = 0)", "Autovalori 2×2 (det(A − λI) = 0)", "Valores propios 2×2 (det(A − λI) = 0)"),
+            "det(A − λ·I) = 0",
+        ) { line { fn(Fn.DET) { matrix(2, 2); minus(); v("λ"); times(); matrix(2, 2, listOf({ num("1") }, { num("0") }, { num("0") }, { num("1") })) }; eq(); num("0") } },
         // ---------------------------------------------------------------- electrotechnics
         Formula(
             "ohm", FormulaCategory.ELECTRO,
