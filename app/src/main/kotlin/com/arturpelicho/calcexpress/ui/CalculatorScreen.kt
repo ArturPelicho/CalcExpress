@@ -183,6 +183,7 @@ class CalcState : KeyboardActions {
     override fun clear() { edit { clear() }; showGraph = false }
     override fun equation() = edit { equalsSign() }
     override fun addEquation() = edit { addEquation() }
+    override fun addLine() = edit { addLine() }
     override fun answer() { answer?.let { a -> edit { insertNumber(Format.plain(a)) } } }
 
     fun left() = edit { moveLeft() }

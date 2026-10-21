@@ -28,7 +28,11 @@ sealed class Outcome {
 
 /** What can be drawn for the current content. */
 sealed class GraphSpec {
-    data class Plot(val variable: String, val f: (Double) -> Double, val marks: List<Double> = emptyList()) : GraphSpec()
+    /** [f] plus any [extra] functions drawn on the same axes (one per line). */
+    data class Plot(
+        val variable: String, val f: (Double) -> Double, val marks: List<Double> = emptyList(),
+        val extra: List<(Double) -> Double> = emptyList(),
+    ) : GraphSpec()
     data class Area(val variable: String, val f: (Double) -> Double, val a: Double, val b: Double) : GraphSpec()
     /** Region of a double integral: outer ∈ [a,b], inner between lo(outer) and hi(outer). */
     data class Region(
@@ -55,7 +59,13 @@ object Analysis {
         val filled = Parser.filledCases(lines)
 
         if (lines.none(::isEquation)) {
-            if (lines.size > 1) throw CalcException(CalcException.Reason.NOT_EQUATION)
+            if (lines.size > 1) {
+                // Several functions of the same variable: plotted together.
+                val free = lines.map { Parser.parse(it, filled).freeVariables() }
+                val all = free.flatten().toSet()
+                if (all.size == 1) return Outcome.Function(all.first())
+                throw CalcException(CalcException.Reason.NOT_EQUATION)
+            }
             val e = Parser.parse(lines[0], filled)
             if (Expr.hasIndefinite(e)) return Outcome.Symbolic(listOf(antiderivativeRow(symbolic(e, angle))))
             val free = e.freeVariables()
@@ -262,6 +272,15 @@ object Analysis {
                 val f = Ode.solve(p, angle).f ?: return null
                 return GraphSpec.Plot(p.x, f)
             }
+        }
+        if (lines.size > 1 && lines.none(::isEquation)) {
+            val es = lines.map { Parser.parse(it, Parser.filledCases(lines)) }
+            val all = es.flatMap { it.freeVariables() }.toSet()
+            if (all.size != 1) return null
+            val v = all.first()
+            val c = EvalContext(angle)
+            val fs = es.map { e -> { x: Double -> e.eval(c.with(v, x)) } }
+            return GraphSpec.Plot(v, fs[0], extra = fs.drop(1))
         }
         if (lines.size != 1) return null
         val line = lines[0]

@@ -406,6 +406,14 @@ class Editor {
         changed()
     }
 
+    /** Adds an empty line (e.g. another function to plot on the same graph). */
+    fun addLine() {
+        val line = MathRow()
+        lines += line
+        caret = Caret(line, 0)
+        changed()
+    }
+
     /** Replaces everything with [newLines] (formula insertion, history...). */
     fun load(newLines: List<MathRow>) {
         lines.clear()

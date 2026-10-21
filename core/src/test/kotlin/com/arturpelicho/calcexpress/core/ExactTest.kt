@@ -54,4 +54,13 @@ class ExactTest {
         assertEquals(2, p.complex.size)
         kotlin.test.assertTrue(kotlin.math.abs(p.complex[0].first + 0.5) < 1e-9 && kotlin.math.abs(p.complex[0].second - kotlin.math.sqrt(3.0) / 2) < 1e-9, "${p.complex}")
     }
+
+    @Test fun severalFunctionsOnOneGraph() {
+        val e = Editor(); e.variable("x"); e.square()
+        e.addLine(); e.digit('2'); e.variable("x")
+        kotlin.test.assertIs<Outcome.Function>(eval(e, AngleUnit.RAD))
+        val g = Analysis.graphFor(e.lines, AngleUnit.RAD) as GraphSpec.Plot
+        assertEquals(1, g.extra.size)
+        assertEquals(9.0, g.f(3.0)); assertEquals(6.0, g.extra[0](3.0))
+    }
 }

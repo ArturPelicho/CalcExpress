@@ -131,6 +131,7 @@ interface KeyboardActions {
     fun clear()
     fun equation()
     fun addEquation()
+    fun addLine()
     fun evaluate()
     fun answer()
 }
@@ -223,7 +224,7 @@ fun MainKeyboard(
                 KeyDef(".", KeyKind.NUMBER) { actions.point() },
                 KeyDef("!", KeyKind.OPERATOR, hint = "%", onLongClick = { actions.postfix(Sym.PERCENT) }) { actions.postfix(Sym.FACTORIAL) },
                 KeyDef("Ans", KeyKind.ACTION, enabled = hasAnswer) { actions.answer() },
-                KeyDef("⊕=", KeyKind.ACTION) { actions.addEquation() },
+                KeyDef("⊕=", KeyKind.ACTION, hint = "⊕", onLongClick = { actions.addLine() }) { actions.addEquation() },
                 KeyDef("=", KeyKind.EQUALS) { actions.evaluate() },
             ),
             24f, Modifier.weight(1.15f),
