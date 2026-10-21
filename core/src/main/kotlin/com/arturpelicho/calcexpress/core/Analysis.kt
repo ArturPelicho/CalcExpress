@@ -8,6 +8,8 @@ sealed class Outcome {
     data class Solutions(val values: List<Pair<String, List<Double>>>) : Outcome()
     /** Fewer equations than unknowns: the first unknowns (by priority) in terms of the rest. */
     data class Parametric(val values: List<Pair<String, Affine>>) : Outcome()
+    /** Symbolic results, one row each, already starting with "=" or "x =" (e.g. antiderivatives). */
+    data class Symbolic(val rows: List<MathRow>) : Outcome()
     data class Truth(val holds: Boolean) : Outcome()
     /** An expression with one free variable: a function that can be plotted. */
     data class Function(val variable: String) : Outcome()
@@ -45,6 +47,7 @@ object Analysis {
         if (lines.none(::isEquation)) {
             if (lines.size > 1) throw CalcException(CalcException.Reason.NOT_EQUATION)
             val e = Parser.parse(lines[0], filled)
+            if (Expr.hasIndefinite(e)) return Outcome.Symbolic(listOf(antiderivativeRow(symbolic(e, angle))))
             val free = e.freeVariables()
             return when (free.size) {
                 0 -> when (val v = e.evalValue(ctx)) {
@@ -99,6 +102,18 @@ object Analysis {
         val c = ctx.with(unknowns.indices.associate { unknowns[it] to sol[it] })
         if (residuals.drop(n).any { kotlin.math.abs(it.eval(c)) > 1e-7 }) throw CalcException(CalcException.Reason.NO_SOLUTION)
         return Outcome.Solutions(unknowns.indices.map { unknowns[it] to listOf(clean(sol[it])) })
+    }
+
+    private fun symbolic(e: Expr, angle: AngleUnit): S =
+        try { Cas.fromExpr(e, angle) } catch (x: Unsupported) { throw CalcException(CalcException.Reason.NO_ANTIDERIVATIVE) }
+
+    /** "= F + C" */
+    private fun antiderivativeRow(f: S): MathRow {
+        val row = Cas.toRow(f)
+        row.items.add(0, Sym.equals())
+        row.items += Sym.op(Sym.PLUS)
+        row.items += Sym.variable("C")
+        return row
     }
 
     private fun clean(v: Double): Double {
@@ -167,7 +182,8 @@ object Analysis {
             return GraphSpec.Plot(v, f, Numerics.findRoots(f))
         }
 
-        val e = Parser.parse(line)
+        var e = Parser.parse(line)
+        if (Expr.hasIndefinite(e)) e = Cas.toExpr(symbolic(e, angle))
         val free = e.freeVariables()
         if (free.size != 1) return null
         val v = free.first()

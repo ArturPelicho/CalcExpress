@@ -39,7 +39,7 @@ enum class AngleUnit(val label: String) {
 class CalcException(val reason: Reason, val detail: String = "") : Exception("$reason $detail") {
     enum class Reason {
         SYNTAX, EMPTY_CASE, DOMAIN, UNKNOWN_VARIABLE, NO_SOLUTION, UNDERDETERMINED, NOT_EQUATION, INDEFINITE_INTEGRAL,
-        MATRIX_DIMENSIONS, MATRIX_SINGULAR, MATRIX_NOT_ALLOWED,
+        MATRIX_DIMENSIONS, MATRIX_SINGULAR, MATRIX_NOT_ALLOWED, NO_ANTIDERIVATIVE,
     }
 }
 
@@ -59,6 +59,12 @@ sealed class Expr {
     abstract fun freeVariables(): Set<String>
 
     data class Num(val value: Double) : Expr() {
+        override fun eval(ctx: EvalContext) = value
+        override fun freeVariables() = emptySet<String>()
+    }
+
+    /** π or e: evaluates like a number but keeps its name for symbolic results. */
+    data class Const(val name: String, val value: Double) : Expr() {
         override fun eval(ctx: EvalContext) = value
         override fun freeVariables() = emptySet<String>()
     }
@@ -202,6 +208,12 @@ sealed class Expr {
         override fun freeVariables() = lower.freeVariables() + upper.freeVariables() + (body.freeVariables() - variable)
     }
 
+    /** ∫ body d(variable) without limits: only meaningful symbolically (see [Cas]). */
+    data class IndefiniteE(val body: Expr, val variable: String) : Expr() {
+        override fun eval(ctx: EvalContext): Double = throw CalcException(CalcException.Reason.INDEFINITE_INTEGRAL)
+        override fun freeVariables() = body.freeVariables() + variable
+    }
+
     data class DerivativeE(val variable: String, val body: Expr) : Expr() {
         override fun eval(ctx: EvalContext): Double {
             val x0 = ctx.values[variable] ?: throw CalcException(CalcException.Reason.UNKNOWN_VARIABLE, variable)
@@ -226,6 +238,20 @@ sealed class Expr {
         /** Removes floating noise such as sin(180°) = 1.2E-16. */
         private fun cleanTrig(fn: Fn, r: Double): Double =
             if ((fn.isTrig) && abs(r) < 1e-14) 0.0 else r
+
+        /** True when [e] contains an indefinite integral anywhere. */
+        fun hasIndefinite(e: Expr): Boolean = when (e) {
+            is IndefiniteE -> true
+            is Num, is Const, is Var -> false
+            is Neg -> hasIndefinite(e.e)
+            is Bin -> hasIndefinite(e.a) || hasIndefinite(e.b)
+            is Call -> hasIndefinite(e.arg)
+            is RootE -> hasIndefinite(e.radicand) || (e.index?.let(::hasIndefinite) ?: false)
+            is MatrixE -> e.cells.any(::hasIndefinite)
+            is Factorial -> hasIndefinite(e.e)
+            is IntegralE -> hasIndefinite(e.body) || hasIndefinite(e.lower) || hasIndefinite(e.upper)
+            is DerivativeE -> hasIndefinite(e.body)
+        }
 
         fun factorial(n: Double): Double {
             if (n < 0 && n == floor(n)) throw CalcException(CalcException.Reason.DOMAIN, "!")

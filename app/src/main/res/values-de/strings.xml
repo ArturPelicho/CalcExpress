@@ -10,7 +10,7 @@
     <string name="calc_history">Verlauf</string>
     <string name="calc_history_empty">Noch keine Berechnungen.</string>
     <string name="calc_tips_title">Kurztipps</string>
-    <string name="calc_tips">• ^ kurz: Quadrat; lang: Exponent eingeben (markiert), erneut lang: zurück.\n• Ein Buchstabe erzeugt eine Variable; =[] macht die Zeile zur Gleichung, = löst sie.\n• ⊕= fügt eine weitere Gleichung für ein Gleichungssystem hinzu.\n• Tippe auf ein Kästchen, um es auszufüllen; ⇥ springt zum nächsten leeren.\n• Klammern wechseln automatisch ( ) → [ ] → { } je nach Verschachtelung.\n• Lang auf sin/cos/tan für die Umkehrfunktion, auf √ für die n-te Wurzel, auf einen Buchstaben für Großbuchstaben.</string>
+    <string name="calc_tips">• ^ kurz: Quadrat; lang: Exponent eingeben (markiert), erneut lang: zurück.\n• Ein Buchstabe erzeugt eine Variable; =[] macht die Zeile zur Gleichung, = löst sie.\n• ⊕= fügt eine weitere Gleichung für ein Gleichungssystem hinzu.\n• Tippe auf ein Kästchen, um es auszufüllen; ⇥ springt zum nächsten leeren.\n• Klammern wechseln automatisch ( ) → [ ] → { } je nach Verschachtelung.\n• Lang auf sin/cos/tan für die Umkehrfunktion, auf √ für die n-te Wurzel, auf einen Buchstaben für Großbuchstaben.\n• ∫ ohne Grenzen liefert die Stammfunktion (+ C).</string>
     <string name="settings_appearance">Darstellung</string>
     <string name="settings_preferences">Einstellungen</string>
     <string name="settings_about">Über die App</string>
@@ -48,7 +48,7 @@
     <string name="dismiss">Schließen</string>
     <string name="graph">Graph</string>
     <string name="reorder">Integrationsreihenfolge ändern</string>
-    <string name="reorder_not_possible">Vorerst nur mit konstanten Grenzen möglich.</string>
+    <string name="reorder_not_possible">Diese Region kann noch nicht automatisch umgeordnet werden.</string>
     <string name="err_syntax">Ausdruck prüfen</string>
     <string name="err_empty_case">Leere Kästchen ausfüllen</string>
     <string name="err_domain">Nicht definiert</string>
@@ -56,12 +56,13 @@
     <string name="err_no_solution">Keine reelle Lösung gefunden</string>
     <string name="err_underdetermined">Unbekannte %1$s: weitere Gleichung hinzufügen (⊕=)</string>
     <string name="err_not_equation">Jede Zeile eines Systems braucht =</string>
-    <string name="err_indefinite">Integrationsgrenzen ausfüllen</string>
+    <string name="err_indefinite">Beide Grenzen ausfüllen oder beide leer lassen für die Stammfunktion</string>
     <string name="err_matrix_dims">Matrixgrößen passen nicht</string>
     <string name="err_matrix_singular">Singuläre Matrix: keine Inverse</string>
     <string name="err_matrix_not_allowed">Hier ist keine Matrix erlaubt</string>
     <string name="matrix_row">Zeile hinzufügen (halten zum Entfernen)</string>
     <string name="matrix_col">Spalte hinzufügen (halten zum Entfernen)</string>
+    <string name="err_no_antiderivative">Keine elementare Stammfunktion gefunden</string>
     <string name="result_true">Wahr</string>
     <string name="result_false">Falsch</string>
     <string name="result_function">Funktion von %1$s</string>

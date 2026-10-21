@@ -10,7 +10,7 @@
     <string name="calc_history">Histórico</string>
     <string name="calc_history_empty">Ainda sem cálculos.</string>
     <string name="calc_tips_title">Dicas rápidas</string>
-    <string name="calc_tips">• ^ toque curto eleva ao quadrado; toque longo entra no expoente (contornado), novo toque longo sai.\n• Escrever uma letra cria uma variável; =[] torna a linha numa equação e = resolve-a.\n• ⊕= adiciona outra equação para resolver um sistema.\n• Toca numa caixa (case) para a preencher; ⇥ salta para a próxima caixa vazia.\n• Os parênteses mudam ( ) → [ ] → { } automaticamente com o nível.\n• Toque longo em sin/cos/tan dá a inversa, em √ a raiz de índice n, numa letra a maiúscula.</string>
+    <string name="calc_tips">• ^ toque curto eleva ao quadrado; toque longo entra no expoente (contornado), novo toque longo sai.\n• Escrever uma letra cria uma variável; =[] torna a linha numa equação e = resolve-a.\n• ⊕= adiciona outra equação para resolver um sistema.\n• Toca numa caixa (case) para a preencher; ⇥ salta para a próxima caixa vazia.\n• Os parênteses mudam ( ) → [ ] → { } automaticamente com o nível.\n• Toque longo em sin/cos/tan dá a inversa, em √ a raiz de índice n, numa letra a maiúscula.\n• ∫ com os limites vazios dá a primitiva (+ C).</string>
     <string name="settings_appearance">Aparência</string>
     <string name="settings_preferences">Preferências</string>
     <string name="settings_about">Sobre a app</string>
@@ -48,7 +48,7 @@
     <string name="dismiss">Fechar</string>
     <string name="graph">Gráfico</string>
     <string name="reorder">Inverter ordem de integração</string>
-    <string name="reorder_not_possible">Por agora, a troca de ordem funciona com limites constantes.</string>
+    <string name="reorder_not_possible">Ainda não consigo trocar a ordem desta região automaticamente.</string>
     <string name="err_syntax">Verifica a expressão</string>
     <string name="err_empty_case">Preenche as caixas vazias</string>
     <string name="err_domain">Resultado indefinido</string>
@@ -56,12 +56,13 @@
     <string name="err_no_solution">Sem solução real encontrada</string>
     <string name="err_underdetermined">Incógnitas %1$s: adiciona outra equação (⊕=)</string>
     <string name="err_not_equation">Todas as linhas de um sistema precisam de =</string>
-    <string name="err_indefinite">Preenche os limites de integração</string>
+    <string name="err_indefinite">Preenche os dois limites, ou deixa ambos vazios para a primitiva</string>
     <string name="err_matrix_dims">As dimensões das matrizes não são compatíveis</string>
     <string name="err_matrix_singular">Matriz singular: não tem inversa</string>
     <string name="err_matrix_not_allowed">Aqui não se pode usar uma matriz</string>
     <string name="matrix_row">Adicionar linha à matriz (mantém para remover)</string>
     <string name="matrix_col">Adicionar coluna à matriz (mantém para remover)</string>
+    <string name="err_no_antiderivative">Não encontrei primitiva elementar</string>
     <string name="result_true">Verdadeiro</string>
     <string name="result_false">Falso</string>
     <string name="result_function">Função de %1$s</string>
