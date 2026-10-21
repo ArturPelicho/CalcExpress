@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.arturpelicho.calcexpress.FontChoice
 import com.arturpelicho.calcexpress.R
 import com.arturpelicho.calcexpress.ThemeChoice
@@ -138,7 +139,7 @@ fun CalcTheme(theme: ThemeChoice, font: FontChoice, content: @Composable () -> U
 
 fun mathStyle(family: FontFamily, size: Float, color: Color, italic: Boolean = false) = TextStyle(
     fontFamily = family,
-    fontSize = androidx.compose.ui.unit.TextUnit(size, androidx.compose.ui.unit.TextUnitType.Sp),
+    fontSize = size.sp,
     fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
     color = color,
 )

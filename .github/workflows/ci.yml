@@ -2,8 +2,7 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches-ignore: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -19,10 +18,11 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - name: Test core and build debug APKs
-        run: ./gradlew :core:test :app:assembleGithubDebug :app:assemblePlayDebug --stacktrace
+      - name: Test core and build APKs
+        # The release build (unsigned here) also checks R8 minification.
+        run: ./gradlew :core:test :app:assembleGithubDebug :app:assemblePlayDebug :app:assembleGithubRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: debug-apks
-          path: app/build/outputs/apk/**/*.apk
+          path: app/build/outputs/apk/*/debug/*.apk
           retention-days: 7
