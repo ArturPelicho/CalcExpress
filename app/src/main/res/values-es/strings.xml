@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu">Menú</string>
+    <string name="settings">Ajustes</string>
+    <string name="back">Atrás</string>
+    <string name="area_calculator">Calculadora</string>
+    <string name="area_conversions">Conversiones</string>
+    <string name="area_formulas">Fórmulas</string>
+    <string name="calc_open">Abrir la calculadora</string>
+    <string name="calc_history">Historial</string>
+    <string name="calc_history_empty">Aún no hay cálculos.</string>
+    <string name="calc_tips_title">Consejos rápidos</string>
+    <string name="calc_tips">• ^ pulsación corta: cuadrado; larga: escribir el exponente (resaltado), otra larga para salir.\n• Una letra crea una variable; =[] convierte la línea en ecuación y = la resuelve.\n• ⊕= añade otra ecuación para resolver un sistema.\n• Toca una casilla para rellenarla; ⇥ salta a la siguiente vacía.\n• Los paréntesis cambian ( ) → [ ] → { } automáticamente según el nivel.\n• Pulsación larga en sin/cos/tan para la inversa, en √ para la raíz n-ésima, en una letra para mayúscula.</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_preferences">Preferencias</string>
+    <string name="settings_about">Acerca de la app</string>
+    <string name="theme">Tema</string>
+    <string name="theme_clear">Claro</string>
+    <string name="theme_dark">Oscuro (OLED)</string>
+    <string name="theme_system">Según el sistema</string>
+    <string name="font">Fuente</string>
+    <string name="font_latex">LaTeX (Computer Modern)</string>
+    <string name="font_sans">Sans serif del sistema</string>
+    <string name="units">Sistema de unidades predeterminado</string>
+    <string name="units_metric">Métrico</string>
+    <string name="units_imperial">Imperial</string>
+    <string name="units_hint">Se usa en conversiones y fórmulas si no se indica otra cosa.</string>
+    <string name="language">Idioma</string>
+    <string name="about_version">Versión %1$s</string>
+    <string name="about_check_updates">Buscar actualizaciones</string>
+    <string name="about_checking">Comprobando…</string>
+    <string name="about_up_to_date">Tienes la última versión.</string>
+    <string name="about_update_available">La versión %1$s está disponible.</string>
+    <string name="about_download_install">Descargar e instalar</string>
+    <string name="about_downloading">Descargando… %1$d %%</string>
+    <string name="about_update_error">No se pudieron buscar actualizaciones. Revisa la conexión.</string>
+    <string name="about_auto_check">Buscar actualizaciones al abrir la app</string>
+    <string name="about_play_updates">Las actualizaciones llegan por Google Play.</string>
+    <string name="about_allow_install">Permite que CalcExpress instale actualizaciones en la pantalla que se abre y vuelve a tocar.</string>
+    <string name="about_whats_new">Novedades</string>
+    <string name="about_source">Código fuente y versiones</string>
+    <string name="about_privacy">Privacidad</string>
+    <string name="about_privacy_text">CalcExpress no recoge datos personales, no tiene anuncios ni analíticas. Los cálculos se quedan en tu dispositivo. La versión de GitHub solo contacta con api.github.com para buscar actualizaciones.</string>
+    <string name="about_licences">Licencias</string>
+    <string name="about_licences_text">Fuente: CMU Serif (Computer Modern Unicode), SIL Open Font License 1.1. Hecha con Kotlin y Jetpack Compose (Apache 2.0).</string>
+    <string name="update_banner">Actualización %1$s disponible</string>
+    <string name="update_action">Actualizar</string>
+    <string name="dismiss">Cerrar</string>
+    <string name="graph">Gráfica</string>
+    <string name="reorder">Cambiar orden de integración</string>
+    <string name="reorder_not_possible">Por ahora funciona con límites constantes.</string>
+    <string name="err_syntax">Revisa la expresión</string>
+    <string name="err_empty_case">Rellena las casillas vacías</string>
+    <string name="err_domain">Resultado indefinido</string>
+    <string name="err_unknown">Incógnitas %1$s: añade = para crear una ecuación</string>
+    <string name="err_no_solution">No se encontró solución real</string>
+    <string name="err_underdetermined">Incógnitas %1$s: añade otra ecuación (⊕=)</string>
+    <string name="err_not_equation">Cada línea de un sistema necesita =</string>
+    <string name="err_indefinite">Rellena los límites de integración</string>
+    <string name="result_true">Verdadero</string>
+    <string name="result_false">Falso</string>
+    <string name="result_function">Función de %1$s</string>
+    <string name="conv_value">Valor</string>
+    <string name="conv_from">De</string>
+    <string name="conv_hint">Toca una unidad para convertir desde ella.</string>
+    <string name="formulas_hint">Toca una fórmula: se abre con casillas para rellenar. Deja vacía la incógnita y pulsa =.</string>
+    <string name="cat_length">Longitud</string>
+    <string name="cat_area">Área</string>
+    <string name="cat_volume">Volumen</string>
+    <string name="cat_mass">Masa</string>
+    <string name="cat_temperature">Temperatura</string>
+    <string name="cat_speed">Velocidad</string>
+    <string name="cat_time">Tiempo</string>
+    <string name="cat_pressure">Presión</string>
+    <string name="cat_energy">Energía</string>
+    <string name="cat_power">Potencia</string>
+    <string name="cat_force">Fuerza</string>
+    <string name="cat_angle">Ángulo</string>
+    <string name="cat_data">Datos</string>
+</resources>

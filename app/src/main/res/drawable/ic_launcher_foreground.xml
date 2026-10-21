@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- equals sign -->
+    <path android:fillColor="@color/ic_foreground" android:pathData="M30,44h20v5h-20z" />
+    <path android:fillColor="@color/ic_foreground" android:pathData="M30,57h20v5h-20z" />
+    <!-- dashed case (box to fill) -->
+    <path android:fillColor="@color/ic_foreground" android:pathData="M56,36h8v4h-8z M68,36h8v4h-8z M56,68h8v4h-8z M68,68h8v4h-8z" />
+    <path android:fillColor="@color/ic_foreground" android:pathData="M56,36h4v10h-4z M56,52h4v6h-4z M56,62h4v10h-4z" />
+    <path android:fillColor="@color/ic_foreground" android:pathData="M76,36h4v10h-4z M76,52h4v6h-4z M76,62h4v10h-4z" />
+</vector>
