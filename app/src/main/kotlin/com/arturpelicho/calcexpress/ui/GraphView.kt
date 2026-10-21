@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -70,7 +71,8 @@ fun GraphView(spec: GraphSpec, modifier: Modifier = Modifier) {
     val c = LocalCalcColors.current
     var vp by remember(spec) { mutableStateOf(initialViewport(spec)) }
     Canvas(
-        modifier.pointerInput(spec) {
+        // Clip so curves that leave the viewport never draw over the rest of the screen.
+        modifier.clipToBounds().pointerInput(spec) {
             detectTransformGestures { centroid, pan, zoom, _ ->
                 val v = vp
                 val w = size.width.toDouble(); val h = size.height.toDouble()
