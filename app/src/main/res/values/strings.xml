@@ -61,8 +61,10 @@
     <string name="err_matrix_dims">Matrix sizes don’t match</string>
     <string name="err_matrix_singular">Singular matrix: no inverse</string>
     <string name="err_matrix_not_allowed">A matrix can’t be used here</string>
-    <string name="matrix_row">Add matrix row (hold to remove)</string>
-    <string name="matrix_col">Add matrix column (hold to remove)</string>
+    <string name="matrix_row">Add matrix row</string>
+    <string name="matrix_col">Add matrix column</string>
+    <string name="matrix_row_remove">Remove matrix row</string>
+    <string name="matrix_col_remove">Remove matrix column</string>
     <string name="err_no_antiderivative">No elementary antiderivative found</string>
     <string name="result_numeric_ode">Numerical solution %1$s(%2$s): see the graph</string>
     <string name="calc_history_clear">Clear</string>

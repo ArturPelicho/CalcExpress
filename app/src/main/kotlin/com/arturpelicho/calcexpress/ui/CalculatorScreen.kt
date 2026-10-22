@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import com.arturpelicho.calcexpress.core.Editor
 import com.arturpelicho.calcexpress.core.Fn
 import com.arturpelicho.calcexpress.core.Format
 import com.arturpelicho.calcexpress.core.GraphSpec
+import com.arturpelicho.calcexpress.core.Mohr
 import com.arturpelicho.calcexpress.core.Integral
 import com.arturpelicho.calcexpress.core.MathCodec
 import com.arturpelicho.calcexpress.core.MathRow
@@ -336,7 +338,8 @@ fun CalculatorScreen(state: CalcState, settings: AppSettings, modifier: Modifier
         ) {
             if (state.showGraph && graph != null) {
                 Box(Modifier.weight(1f).fillMaxWidth()) {
-                    GraphView(graph, Modifier.fillMaxSize())
+                    if (graph is GraphSpec.MohrState) MohrOfMatrix(graph)
+                    else GraphView(graph, Modifier.fillMaxSize())
                 }
                 Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)) {
                     Column { state.editor.lines.forEach { MathRowView(it, ctx, 20f) } }
@@ -368,10 +371,24 @@ fun CalculatorScreen(state: CalcState, settings: AppSettings, modifier: Modifier
                 KeyDef("📈", KeyKind.TOOL, enabled = graph != null || state.hasEquation, highlighted = state.showGraph, description = stringResource(R.string.graph)) { state.toggleGraph() },
                 if (state.editor.inMatrix) KeyDef("+↓", KeyKind.TOOL, description = stringResource(R.string.matrix_row), onLongClick = { state.removeMatrixRow() }) { state.addMatrixRow() } else null,
                 if (state.editor.inMatrix) KeyDef("+→", KeyKind.TOOL, description = stringResource(R.string.matrix_col), onLongClick = { state.removeMatrixColumn() }) { state.addMatrixColumn() } else null,
+                if (state.editor.inMatrix) KeyDef("−↓", KeyKind.TOOL, description = stringResource(R.string.matrix_row_remove)) { state.removeMatrixRow() } else null,
+                if (state.editor.inMatrix) KeyDef("−→", KeyKind.TOOL, description = stringResource(R.string.matrix_col_remove)) { state.removeMatrixColumn() } else null,
                 if (state.canReorder) KeyDef("⇅∫", KeyKind.TOOL, description = stringResource(R.string.reorder)) { state.reorder() } else null,
             ),
             modifier = Modifier.weight(0.64f),
         )
+    }
+}
+
+/** A symmetric matrix read as a stress state: its Mohr's circle (2D: drag to rotate the plane). */
+@Composable
+private fun MohrOfMatrix(g: GraphSpec.MohrState) {
+    val t = g.tensor
+    if (g.twoD) {
+        var theta by remember(g) { mutableStateOf(0.0) }
+        MohrCanvas2D(t.xx, t.yy, t.xy, theta, "σ", "τ", false, "x" to "y", Modifier.fillMaxSize()) { theta = it }
+    } else {
+        MohrCanvas3D(Mohr.principal3D(t), null, "σ", false, Modifier.fillMaxSize())
     }
 }
 

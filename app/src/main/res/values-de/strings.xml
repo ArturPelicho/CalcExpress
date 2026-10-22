@@ -60,8 +60,10 @@
     <string name="err_matrix_dims">Matrixgrößen passen nicht</string>
     <string name="err_matrix_singular">Singuläre Matrix: keine Inverse</string>
     <string name="err_matrix_not_allowed">Hier ist keine Matrix erlaubt</string>
-    <string name="matrix_row">Zeile hinzufügen (halten zum Entfernen)</string>
-    <string name="matrix_col">Spalte hinzufügen (halten zum Entfernen)</string>
+    <string name="matrix_row">Zeile hinzufügen</string>
+    <string name="matrix_col">Spalte hinzufügen</string>
+    <string name="matrix_row_remove">Zeile entfernen</string>
+    <string name="matrix_col_remove">Spalte entfernen</string>
     <string name="err_no_antiderivative">Keine elementare Stammfunktion gefunden</string>
     <string name="result_numeric_ode">Numerische Lösung %1$s(%2$s): siehe Graph</string>
     <string name="calc_history_clear">Löschen</string>

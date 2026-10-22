@@ -98,4 +98,16 @@ class MohrTest {
         assertEquals(null, TextExpr.eval("3w", v))
         assertEquals(setOf("x", "y"), TextExpr.variables("3x^2 + sin(y) + e + pi"))
     }
+
+    @Test fun symmetricMatrixGraphsAsMohr() {
+        val sym = RowBuilder.build { matrix(2, 2, listOf({ num("80") }, { num("25") }, { num("25") }, { minus(); num("40") })) }
+        val g = Analysis.graphFor(listOf(sym), AngleUnit.RAD) as GraphSpec.MohrState
+        assertTrue(g.twoD)
+        assertEquals(Mohr.Tensor3(80.0, -40.0, 0.0, 25.0, 0.0, 0.0), g.tensor)
+        val notSym = RowBuilder.build { matrix(2, 2, listOf({ num("1") }, { num("2") }, { num("3") }, { num("4") })) }
+        assertEquals(null, Analysis.graphFor(listOf(notSym), AngleUnit.RAD))
+        val three = RowBuilder.build { matrix(3, 3, listOf({ num("1") }, { num("2") }, { num("3") }, { num("2") }, { num("5") }, { num("6") }, { num("3") }, { num("6") }, { num("9") })) }
+        val g3 = Analysis.graphFor(listOf(three), AngleUnit.RAD) as GraphSpec.MohrState
+        assertEquals(Mohr.Tensor3(1.0, 5.0, 9.0, 2.0, 6.0, 3.0), g3.tensor)
+    }
 }

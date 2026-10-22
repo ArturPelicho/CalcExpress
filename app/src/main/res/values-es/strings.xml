@@ -60,8 +60,10 @@
     <string name="err_matrix_dims">Las dimensiones de las matrices no coinciden</string>
     <string name="err_matrix_singular">Matriz singular: no tiene inversa</string>
     <string name="err_matrix_not_allowed">Aquí no se puede usar una matriz</string>
-    <string name="matrix_row">Añadir fila (mantén para quitar)</string>
-    <string name="matrix_col">Añadir columna (mantén para quitar)</string>
+    <string name="matrix_row">Añadir fila</string>
+    <string name="matrix_col">Añadir columna</string>
+    <string name="matrix_row_remove">Quitar fila</string>
+    <string name="matrix_col_remove">Quitar columna</string>
     <string name="err_no_antiderivative">No se encontró primitiva elemental</string>
     <string name="result_numeric_ode">Solución numérica %1$s(%2$s): mira el gráfico</string>
     <string name="calc_history_clear">Borrar</string>

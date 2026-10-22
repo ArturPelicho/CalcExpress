@@ -60,8 +60,10 @@
     <string name="err_matrix_dims">Dimensions de matrices incompatibles</string>
     <string name="err_matrix_singular">Matrice singulière : pas d’inverse</string>
     <string name="err_matrix_not_allowed">Une matrice n’est pas permise ici</string>
-    <string name="matrix_row">Ajouter une ligne (maintenir pour supprimer)</string>
-    <string name="matrix_col">Ajouter une colonne (maintenir pour supprimer)</string>
+    <string name="matrix_row">Ajouter une ligne</string>
+    <string name="matrix_col">Ajouter une colonne</string>
+    <string name="matrix_row_remove">Supprimer une ligne</string>
+    <string name="matrix_col_remove">Supprimer une colonne</string>
     <string name="err_no_antiderivative">Pas de primitive élémentaire trouvée</string>
     <string name="result_numeric_ode">Solution numérique %1$s(%2$s) : voir le graphique</string>
     <string name="calc_history_clear">Effacer</string>

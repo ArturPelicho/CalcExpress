@@ -39,6 +39,8 @@ sealed class GraphSpec {
         val outer: String, val inner: String, val a: Double, val b: Double,
         val lo: (Double) -> Double, val hi: (Double) -> Double,
     ) : GraphSpec()
+    /** A symmetric 2×2 or 3×3 numeric matrix, read as a stress/strain state and shown as Mohr's circle. */
+    data class MohrState(val tensor: Mohr.Tensor3, val twoD: Boolean) : GraphSpec()
 }
 
 object Analysis {
@@ -265,6 +267,17 @@ object Analysis {
         graphOrThrow(lines.filter { !it.isEmpty }, angle)
     } catch (e: CalcException) { null }
 
+    private fun mohrState(m: MatrixNode, ctx: EvalContext): GraphSpec? {
+        val n = m.rowCount
+        if (n != m.colCount || n !in 2..3) return null
+        val a = List(n) { r -> List(n) { c -> Parser.parse(m.cell(r, c)).eval(ctx) } }
+        val scale = a.flatten().maxOf { abs(it) }.coerceAtLeast(1e-300)
+        for (r in 0 until n) for (c in r + 1 until n) if (abs(a[r][c] - a[c][r]) > 1e-9 * scale) return null
+        if (a.flatten().any { !it.isFinite() }) return null
+        return if (n == 2) GraphSpec.MohrState(Mohr.Tensor3(a[0][0], a[1][1], 0.0, a[0][1], 0.0, 0.0), twoD = true)
+        else GraphSpec.MohrState(Mohr.Tensor3(a[0][0], a[1][1], a[2][2], a[0][1], a[1][2], a[0][2]), twoD = false)
+    }
+
     private fun graphOrThrow(lines: List<MathRow>, angle: AngleUnit): GraphSpec? {
         if (lines.isNotEmpty() && lines.all(::isEquation)) {
             val parsed = lines.map { Parser.parseLine(it, Parser.filledCases(lines)) }
@@ -285,6 +298,8 @@ object Analysis {
         if (lines.size != 1) return null
         val line = lines[0]
         val ctx = EvalContext(angle)
+
+        (line.items.singleOrNull() as? MatrixNode)?.let { m -> return mohrState(m, ctx) }
 
         // Integrals: shaded area (single) or integration region (double).
         val integral = line.items.singleOrNull() as? Integral
