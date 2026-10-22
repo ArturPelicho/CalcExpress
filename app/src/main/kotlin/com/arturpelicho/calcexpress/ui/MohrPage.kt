@@ -2,6 +2,8 @@ package com.arturpelicho.calcexpress.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -102,6 +104,12 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
     val nz = rememberSaveable { mutableStateOf("1") }
 
     var shearDown by rememberSaveable { mutableStateOf(false) }
+    // 2D input by two faces A and B (any two points of the circle); τ_B empty means B is at 180°.
+    var byPoints by rememberSaveable { mutableStateOf(false) }
+    val sA = rememberSaveable { mutableStateOf("80") }
+    val tA = rememberSaveable { mutableStateOf("25") }
+    val sB = rememberSaveable { mutableStateOf("-40") }
+    val tB = rememberSaveable { mutableStateOf("") }
     // 3D plane: by normal components or by spherical angles (θ from x in the xy-plane, φ from z).
     var byAngles3 by rememberSaveable { mutableStateOf(false) }
     val az = rememberSaveable { mutableStateOf(editText(unit.fromRadians(Math.PI / 4))) }
@@ -116,7 +124,7 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
     val t = if (strain) (if (threeD) "ε" else "γ") else "τ"
     val shearFactor = if (strain && !threeD) 0.5 else 1.0
 
-    val tensorFields = if (threeD) listOf(xx, yy, zz, xy, yz, xz) else listOf(xx, yy, xy)
+    val tensorFields = if (threeD) listOf(xx, yy, zz, xy, yz, xz) else if (byPoints) listOf(sA, tA, sB, tB) else listOf(xx, yy, xy)
     val fieldVars = tensorFields.flatMap { TextExpr.variables(it.value) }.toSet()
     val point = mapOf("x" to parseNum(px.value), "y" to parseNum(py.value), "z" to parseNum(pz.value))
         .filterValues { it != null }.mapValues { it.value!! }
@@ -138,26 +146,49 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
             val vxz = ev(xz)?.times(shearFactor)
 
             if (!threeD) {
+                // From faces A and B: the same state with A as the x face.
+                val ab = if (byPoints) {
+                    val a1 = ev(sA); val a2 = ev(tA)?.times(shearFactor); val b1 = ev(sB)
+                    val b2 = if (tB.value.isBlank()) null else ev(tB)?.times(shearFactor)
+                    if (a1 != null && a2 != null && b1 != null && (tB.value.isBlank() || b2 != null)) Mohr.fromPoints(a1, a2, b1, b2) else null
+                } else null
+                val qxx = if (byPoints) ab?.sx else vxx
+                val qyy = if (byPoints) ab?.sy else vyy
+                val qxy = if (byPoints) ab?.txy else vxy
+                val pointB = if (ab != null && abs(ab.thetaAB - Math.PI / 2) > 1e-9) Mohr.rotate2D(ab.sx, ab.sy, ab.txy, ab.thetaAB) else null
                 val th = if (byNormal) {
                     val a = parseNum(nx.value); val b = parseNum(ny.value)
                     if (a != null && b != null && (a != 0.0 || b != 0.0)) atan2(b, a) else null
                 } else parseNum(theta.value)?.let { unit.toRadians(it) }
-                val faces = "x" to "y"
-                if (vxx != null && vyy != null && vxy != null) {
-                    MohrCanvas2D(vxx, vyy, vxy, th ?: 0.0, s, t, strain, faces, shearDown = shearDown) { newTheta ->
-                        theta.value = editText(unit.fromRadians(newTheta))
-                        nx.value = editText3(cos(newTheta)); ny.value = editText3(sin(newTheta))
-                    }
+                val faces = when {
+                    !byPoints -> "x" to "y"
+                    pointB == null -> "A" to "B"
+                    else -> "A" to "A′"
+                }
+                fun setTheta(newTheta: Double) {
+                    theta.value = editText(unit.fromRadians(newTheta))
+                    nx.value = editText3(cos(newTheta)); ny.value = editText3(sin(newTheta))
+                }
+                if (qxx != null && qyy != null && qxy != null) {
+                    MohrCanvas2D(qxx, qyy, qxy, th ?: 0.0, s, t, strain, faces, shearDown = shearDown, pointB = pointB) { setTheta(it) }
                 } else BlankCanvas()
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
                     val shearName = if (strain) "γ/2" else "τ"
                     FilterChip(!shearDown, { shearDown = false }, { Text("$shearName ↑") })
                     FilterChip(shearDown, { shearDown = true }, { Text("$shearName ↓") })
                 }
-                if (vxx != null && vyy != null && vxy != null) MohrElements(vxx, vyy, vxy, th ?: 0.0, strain, s, t, unit)
+                if (qxx != null && qyy != null && qxy != null) MohrElements(qxx, qyy, qxy, th ?: 0.0, strain, s, t, unit)
                 Text(stringResource(R.string.mohr_hint_2d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 4.dp))
-                FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", xy to "${t}_xy"), text = true)
-                Note(stringResource(R.string.mohr_points_note))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
+                    FilterChip(!byPoints, { byPoints = false }, { Text(stringResource(R.string.mohr_components)) })
+                    FilterChip(byPoints, { byPoints = true }, { Text(stringResource(R.string.mohr_points)) })
+                }
+                if (byPoints) {
+                    FieldRow(listOf(sA to "${s}_A", tA to "${t}_A"), text = true)
+                    FieldRow(listOf(sB to "${s}_B", tB to "${t}_B"), text = true)
+                    Note(stringResource(R.string.mohr_points_note))
+                    if (ab == null && listOf(sA, tA, sB).all { it.value.isNotBlank() }) Note(stringResource(R.string.mohr_points_none))
+                } else FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", xy to "${t}_xy"), text = true)
                 PointRow(fieldVars, threeD = false, px, py, pz)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
                     FilterChip(!byNormal, { byNormal = false }, { Text(stringResource(R.string.mohr_by_angle)) })
@@ -165,10 +196,11 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 }
                 if (byNormal) FieldRow(listOf(nx to "n_x", ny to "n_y"))
                 else FieldRow(listOf(theta to "θ (${unit.label})"))
+                if (byPoints) Note(stringResource(R.string.mohr_from_a))
                 if (strain) Note(stringResource(R.string.mohr_strain_note))
                 Note(stringResource(R.string.mohr_field_hint))
-                if (vxx == null || vyy == null || vxy == null || th == null) Note(stringResource(R.string.mohr_fill))
-                else Results2D(vxx, vyy, vxy, th, s, t, strain, unit)
+                if (qxx == null || qyy == null || qxy == null || th == null) Note(stringResource(R.string.mohr_fill))
+                else Results2D(qxx, qyy, qxy, th, s, t, strain, unit, ab?.thetaAB?.takeIf { byPoints }) { setTheta(it) }
             } else {
                 val n = if (byAngles3) {
                     val a = parseNum(az.value)?.let { unit.toRadians(it) }
@@ -180,13 +212,15 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 val normal = if (n.all { it != null }) DoubleArray(3) { n[it]!! } else null
                 val p = ten?.let { Mohr.principal3D(it) }
                 val onPlane = if (ten != null && normal != null) Mohr.onPlane3D(ten, normal) else null
-                if (p != null) MohrCanvas3D(p, onPlane, s, strain) { sn, tn ->
-                    // Dragging moves the plane's point: find a normal that lands there.
-                    val u = Mohr.normalFor(p, sn, tn)
+                fun setNormal(u: DoubleArray) {
                     nx.value = editText3(u[0]); ny.value = editText3(u[1]); nz.value = editText3(u[2])
                     az.value = editText(unit.fromRadians(atan2(u[1], u[0])))
                     polar.value = editText(unit.fromRadians(Math.acos(u[2].coerceIn(-1.0, 1.0))))
-                } else BlankCanvas()
+                }
+                // Dragging moves the plane's point: find a normal that lands there.
+                if (p != null) MohrCanvas3D(p, onPlane, s, strain) { sn, tn -> setNormal(Mohr.normalFor(p, sn, tn)) }
+                else BlankCanvas()
+                if (p != null && ten != null) MohrElements3D(ten, p, strain, s, t)
                 Text(stringResource(R.string.mohr_hint_3d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp))
                 // The symmetric matrix: mirrored cells share their state, so editing either keeps it symmetric.
                 Text(stringResource(R.string.mohr_matrix), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
@@ -204,7 +238,7 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 } else FieldRow(listOf(nx to "n_x", ny to "n_y", nz to "n_z"))
                 if (strain) Note(stringResource(R.string.mohr_matrix_note))
                 Note(stringResource(R.string.mohr_field_hint))
-                if (p != null && ten != null && normal != null) Results3D(p, ten, onPlane, s, t, strain)
+                if (p != null && ten != null) Results3D(p, ten, onPlane, s, t, strain, unit) { setNormal(it) }
                 else Note(stringResource(R.string.mohr_fill))
                 if (normal != null && onPlane == null) Note(stringResource(R.string.mohr_zero_normal))
             }
@@ -259,16 +293,53 @@ private fun ResultLine(text: String) {
 
 private fun n(v: Double) = Format.number(v, 6)
 
+/** A result that can be applied: tapping it sets the plane, shown on the diagram. */
 @Composable
-private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String, t: String, strain: Boolean, unit: AngleUnit) {
+private fun ApplyLine(text: String, detail: String? = null, onClick: () -> Unit) {
+    val c = LocalCalcColors.current
+    val shape = RoundedCornerShape(10.dp)
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(shape)
+            .background(c.accent.copy(alpha = 0.07f))
+            .border(0.8.dp, c.accent.copy(alpha = 0.35f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            ResultLine(text)
+            if (detail != null) Text(mathLabel(detail), style = mathStyle(LocalMathFont.current, 13f, c.muted))
+        }
+        Text("◎", color = c.highlight, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** Shows a direction with a non-negative leading component: same plane, easier to read. */
+private fun readable(d: DoubleArray): DoubleArray {
+    val lead = d.firstOrNull { abs(it) > 1e-12 } ?: 1.0
+    return if (lead < 0) DoubleArray(3) { -d[it] + 0.0 } else d
+}
+
+private fun vecText(d: DoubleArray) = d.joinToString(", ", "(", ")") { Format.number(it + 0.0, 4) }
+
+@Composable
+private fun Results2D(
+    sx: Double, sy: Double, txy: Double, th: Double, s: String, t: String, strain: Boolean, unit: AngleUnit,
+    thetaAB: Double?, onTheta: (Double) -> Unit,
+) {
     val m = Mohr.plane2D(sx, sy, txy)
     val p = Mohr.rotate2D(sx, sy, txy, th)
     val k = if (strain) 2.0 else 1.0
     ResultTitle(stringResource(R.string.mohr_principal))
     ResultLine("${s}_1 = ${n(m.p1)}    ${s}_2 = ${n(m.p2)}")
     ResultLine("${t}_max = ${n(k * m.maxShear)}")
-    ResultLine("θ_p = ${angleText(m.thetaP, unit)}    θ_s = ${angleText(Mohr.normaliseHalfTurn(m.thetaS), unit)}")
     ResultLine("${stringResource(R.string.mohr_centre)} = ${n(m.centre)}    ${stringResource(R.string.mohr_radius)} = ${n(m.radius)}")
+    ResultTitle(stringResource(R.string.mohr_planes))
+    ApplyLine("θ_p = ${angleText(m.thetaP, unit)}", stringResource(R.string.mohr_theta_p)) { onTheta(m.thetaP) }
+    val ts = Mohr.normaliseHalfTurn(m.thetaS)
+    ApplyLine("θ_s = ${angleText(ts, unit)}", stringResource(R.string.mohr_theta_s)) { onTheta(ts) }
+    if (thetaAB != null) ApplyLine("θ_AB = ${angleText(thetaAB, unit)}", stringResource(R.string.mohr_theta_ab)) { onTheta(thetaAB) }
+    Note(stringResource(R.string.mohr_tap_apply))
     val (i1, i2) = Mohr.invariants2D(sx, sy, txy)
     ResultTitle(stringResource(R.string.mohr_invariants))
     ResultLine("I_1 = ${n(i1)}    I_2 = ${n(i2)}")
@@ -280,7 +351,10 @@ private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String
 }
 
 @Composable
-private fun Results3D(p: Mohr.Principal3D, ten: Mohr.Tensor3, on: Mohr.Point?, s: String, t: String, strain: Boolean) {
+private fun Results3D(
+    p: Mohr.Principal3D, ten: Mohr.Tensor3, on: Mohr.Point?, s: String, t: String, strain: Boolean, unit: AngleUnit,
+    onNormal: (DoubleArray) -> Unit,
+) {
     // Strain shear is reported as the engineering γ = 2·ε_ij.
     val k = if (strain) 2.0 else 1.0
     val g = if (strain) "γ" else t
@@ -290,12 +364,21 @@ private fun Results3D(p: Mohr.Principal3D, ten: Mohr.Tensor3, on: Mohr.Point?, s
     val (i1, i2, i3) = ten.invariants()
     ResultTitle(stringResource(R.string.mohr_invariants))
     ResultLine("I_1 = ${n(i1)}    I_2 = ${n(i2)}    I_3 = ${n(i3)}")
+    fun angles(d: DoubleArray) = Mohr.axisAngles(d).let { a -> "∠x ${angleText(a[0], unit)}   ∠y ${angleText(a[1], unit)}   ∠z ${angleText(a[2], unit)}" }
     ResultTitle(stringResource(R.string.mohr_directions))
-    p.directions.forEachIndexed { i, d ->
-        // Show each direction with a non-negative leading component, for readability.
-        val sign = if ((d.firstOrNull { abs(it) > 1e-12 } ?: 1.0) < 0) -1.0 else 1.0
-        ResultLine("n_${i + 1} = (${d.joinToString(", ") { Format.number(sign * it + 0.0, 4) }})")
+    Mohr.principalFrame(p).forEachIndexed { i, d0 ->
+        val d = readable(d0)
+        ApplyLine("n_${i + 1} = ${vecText(d)}", angles(d)) { onNormal(d) }
     }
+    // Planes of maximum shear: bisectors of directions 1 and 3.
+    ResultTitle(stringResource(R.string.mohr_shear_planes) + "  (${g}_max = ${n(k * p.maxShear)})")
+    val (n1, _, n3) = Mohr.principalFrame(p)
+    val r = 1 / Math.sqrt(2.0)
+    listOf(1.0, -1.0).forEachIndexed { i, sg ->
+        val d = readable(DoubleArray(3) { r * (n1[it] + sg * n3[it]) })
+        ApplyLine("n_s${i + 1} = ${vecText(d)}", angles(d)) { onNormal(d) }
+    }
+    Note(stringResource(R.string.mohr_tap_apply))
     if (on != null) {
         ResultTitle(stringResource(R.string.mohr_on_plane))
         ResultLine("${s}_n = ${n(on.normal)}    ${g}_n = ${n(k * on.shear)}")
@@ -315,7 +398,7 @@ private fun short(v: Double) = Format.number(if (abs(v) < 1e-12) 0.0 else v, 4)
 @Composable
 internal fun MohrCanvas2D(
     sx: Double, sy: Double, txy: Double, theta: Double, s: String, t: String, strain: Boolean, faces: Pair<String, String>,
-    modifier: Modifier = CANVAS, shearDown: Boolean = false, onTheta: (Double) -> Unit,
+    modifier: Modifier = CANVAS, shearDown: Boolean = false, pointB: Mohr.Point? = null, onTheta: (Double) -> Unit,
 ) {
     val c = LocalCalcColors.current
     val m = Mohr.plane2D(sx, sy, txy)
@@ -354,6 +437,12 @@ internal fun MohrCanvas2D(
         drawCircle(c.muted, 4.dp.toPx(), px); drawCircle(c.muted, 4.dp.toPx(), py)
         tag("${faces.first} (${short(sx)}, ${short(txy)})", px, centre, c, c.muted)
         tag("${faces.second} (${short(sy)}, ${short(-txy)})", py, centre, c, c.muted)
+        if (pointB != null) {
+            // Face B when it is not the face at 90° to A.
+            val pb = at(pointB.normal, pointB.shear)
+            drawCircle(c.text, 4.dp.toPx(), pb)
+            tag("B (${short(pointB.normal)}, ${short(pointB.shear)})", pb, centre, c, c.text)
+        }
         // Principal values on the axis.
         val p1 = Offset(f.x(m.p1), f.oy); val p2 = Offset(f.x(m.p2), f.oy)
         drawCircle(c.accent, 4.dp.toPx(), p1); drawCircle(c.accent, 4.dp.toPx(), p2)
@@ -520,6 +609,126 @@ internal fun MohrElements(sx: Double, sy: Double, txy: Double, theta: Double, st
         }
     }
     Note(stringResource(if (strain) R.string.mohr_el_note_strain else R.string.mohr_el_note_stress))
+}
+
+/**
+ * The 3D element in the x, y, z axes, in the principal axes and in the axes of maximum shear,
+ * drawn in isometric view. Stress: arrows of the traction components on the three visible faces,
+ * sized by value. Strain: the deformed element over the original (dashed).
+ */
+@Composable
+internal fun MohrElements3D(ten: Mohr.Tensor3, p: Mohr.Principal3D, strain: Boolean, s: String, t: String) {
+    val c = LocalCalcColors.current
+    val k = if (strain) 2.0 else 1.0
+    val sh = if (strain) "γ" else t
+    data class El(val title: String, val frame: List<DoubleArray>, val axes: List<String>, val color: Color)
+    val identity = listOf(doubleArrayOf(1.0, 0.0, 0.0), doubleArrayOf(0.0, 1.0, 0.0), doubleArrayOf(0.0, 0.0, 1.0))
+    val els = listOf(
+        El("x, y, z", identity, listOf("x", "y", "z"), c.highlight),
+        El(stringResource(R.string.mohr_el_principal), Mohr.principalFrame(p), listOf("1", "2", "3"), c.accent),
+        El(stringResource(R.string.mohr_el_shear), Mohr.maxShearFrame(p), listOf("1′", "2′", "3′"), c.accent),
+    )
+    val scale = (p.values.maxOf { abs(it) }).coerceAtLeast(p.maxShear).takeIf { it > 1e-300 } ?: 1.0
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        els.forEach { e ->
+            val local = Mohr.inFrame(ten, e.frame)
+            Column(
+                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(c.display).padding(bottom = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(e.title, color = e.color, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 6.dp))
+                Canvas(Modifier.fillMaxWidth().aspectRatio(1f)) {
+                    drawElement3D(e.frame, local, e.axes, strain, scale, c, e.color)
+                }
+                val style = mathStyle(LocalMathFont.current, 12f, c.text)
+                val (a1, a2, a3) = e.axes
+                Text(mathLabel("${s}_$a1 = ${short(local.xx)}"), style = style)
+                Text(mathLabel("${s}_$a2 = ${short(local.yy)}"), style = style)
+                Text(mathLabel("${s}_$a3 = ${short(local.zz)}"), style = style)
+                Text(mathLabel("${sh}_$a1$a2 = ${short(k * local.xy)}"), style = style)
+                Text(mathLabel("${sh}_$a2$a3 = ${short(k * local.yz)}"), style = style)
+                Text(mathLabel("${sh}_$a1$a3 = ${short(k * local.xz)}"), style = style)
+            }
+        }
+    }
+    Note(stringResource(if (strain) R.string.mohr_el_note_strain else R.string.mohr_el_note_stress3))
+}
+
+/** Isometric view: x towards the lower left, y towards the lower right, z up. */
+private class Iso(val cx: Float, val cy: Float) {
+    private val k = Math.cos(Math.PI / 6).toFloat()
+    fun at(g: DoubleArray) = Offset(cx + ((g[1] - g[0]) * k).toFloat(), cy - (g[2] - (g[0] + g[1]) * 0.5).toFloat())
+}
+
+private fun DrawScope.drawElement3D(
+    frame: List<DoubleArray>, local: Mohr.Tensor3, axes: List<String>, strain: Boolean, scale: Double, c: CalcColors, color: Color,
+) {
+    val h = size.minDimension * (if (strain) 0.2 else 0.16)
+    val iso = Iso(size.width / 2, size.height / 2)
+    val m = local.matrix()
+    // Global point of local coordinates (u1, u2, u3).
+    fun g(u: DoubleArray) = DoubleArray(3) { r -> (0 until 3).sumOf { i -> u[i] * frame[i][r] } }
+    fun pt(u: DoubleArray) = iso.at(g(u))
+    val view = doubleArrayOf(1.0, 1.0, 1.0)
+    // The three faces turned towards the viewer: axis i and its sign.
+    val faces = (0 until 3).map { i -> i to (if ((0 until 3).sumOf { frame[i][it] * view[it] } >= 0) 1.0 else -1.0) }
+    fun faceCorners(i: Int, sg: Double, map: (DoubleArray) -> DoubleArray = { it }): List<Offset> {
+        val j = (i + 1) % 3; val l = (i + 2) % 3
+        return listOf(-1.0 to -1.0, 1.0 to -1.0, 1.0 to 1.0, -1.0 to 1.0).map { (a, b) ->
+            val u = DoubleArray(3); u[i] = sg * h; u[j] = a * h; u[l] = b * h
+            pt(map(u))
+        }
+    }
+    fun poly(pts: List<Offset>) = Path().apply { moveTo(pts[0].x, pts[0].y); pts.drop(1).forEach { lineTo(it.x, it.y) }; close() }
+    val dash = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))
+    if (strain) {
+        // Corner u moves by g·E·u: exaggerated so the largest strain shifts a corner by about a quarter.
+        val gain = 0.28 / scale
+        val deform = { u: DoubleArray -> DoubleArray(3) { r -> u[r] + gain * (0 until 3).sumOf { s -> m[r][s] * u[s] } } }
+        for ((i, sg) in faces) drawPath(poly(faceCorners(i, sg)), c.muted.copy(alpha = 0.8f), style = Stroke(1.1.dp.toPx(), pathEffect = dash))
+        for ((i, sg) in faces) {
+            val path = poly(faceCorners(i, sg, deform))
+            drawPath(path, color.copy(alpha = 0.10f + 0.06f * i))
+            drawPath(path, color, style = Stroke(1.8.dp.toPx(), join = StrokeJoin.Round))
+        }
+    } else {
+        for ((i, sg) in faces) {
+            val path = poly(faceCorners(i, sg))
+            drawPath(path, color.copy(alpha = 0.08f + 0.06f * i))
+            drawPath(path, color, style = Stroke(1.4.dp.toPx(), join = StrokeJoin.Round))
+        }
+        val maxLen = size.minDimension * 0.2
+        val w = 1.8.dp.toPx()
+        fun unit(i: Int, sgn: Double) = DoubleArray(3).also { it[i] = sgn }
+        for ((i, sg) in faces) {
+            val centre = DoubleArray(3).also { it[i] = sg * h }
+            for (j in 0 until 3) {
+                // Traction on the face with outward normal sg·e_i, component along e_j.
+                val v = sg * m[i][j]
+                val len = abs(v) / scale * maxLen
+                if (len < 1.5) continue
+                val dir = unit(j, if (v > 0) 1.0 else -1.0)
+                val col = if (i == j) c.accent else c.highlight
+                if (i == j) {
+                    // Normal stress from the face outwards (tension) or onto it (compression).
+                    val gap = h * 0.08
+                    val near = DoubleArray(3) { centre[it] + sg * unit(i, 1.0)[it] * gap }
+                    val far = DoubleArray(3) { near[it] + sg * unit(i, 1.0)[it] * len }
+                    if (m[i][i] > 0) arrow(pt(near), pt(far), col, w) else arrow(pt(far), pt(near), col, w)
+                } else {
+                    val tip = DoubleArray(3) { centre[it] + dir[it] * min(len, 0.95 * h) }
+                    arrow(pt(centre), pt(tip), col, w)
+                }
+            }
+        }
+    }
+    // Axis labels beyond each visible face.
+    for ((i, sg) in faces) {
+        val tip = DoubleArray(3).also { it[i] = sg * h * 2.25 }
+        val o = pt(tip)
+        val label = (if (sg < 0) "−" else "") + axes[i]
+        small(label, Offset(o.x, o.y + 4.dp.toPx()), c.muted, center = true)
+    }
 }
 
 /** Maps element coordinates (u along x′, v along y′, v up) to the canvas. */

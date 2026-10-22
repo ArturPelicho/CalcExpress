@@ -103,7 +103,7 @@
     <string name="mohr_fill">Escribe un número en cada campo.</string>
     <string name="mohr_strain_note">γ es la distorsión angular, positiva cuando el ángulo recto entre x e y disminuye; el círculo usa γ/2.</string>
     <string name="mohr_zero_normal">La normal no puede ser nula.</string>
-    <string name="mohr_points_note">x e y pueden ser dos caras perpendiculares cualesquiera, como los puntos A y B en los extremos de un diámetro; θ se mide desde x.</string>
+    <string name="mohr_points_note">A y B son dos caras cualesquiera del elemento, dadas por sus puntos en el círculo. Deja τ_B vacío si B es la cara a 90° de A (180° en el círculo).</string>
     <string name="mohr_point">En el punto (x, y, z)</string>
     <string name="mohr_matrix">Matriz del tensor</string>
     <string name="mohr_matrix_note">Fuera de la diagonal están las componentes del tensor ε_ij = γ_ij/2; los resultados muestran γ.</string>
@@ -115,5 +115,16 @@
     <string name="mohr_el_shear">Cortante máx.</string>
     <string name="mohr_el_note_stress">Las flechas crecen con la tensión. En la cara x, σ positivo apunta a la derecha y τ positivo hacia arriba; en la cara superior τ apunta a la derecha.</string>
     <string name="mohr_el_note_strain">Deformación exagerada para que se vea; el elemento original está discontinuo.</string>
+    <string name="mohr_planes">Planos principales y de cortante máx.</string>
+    <string name="mohr_theta_p">Ángulo de x a la dirección principal 1</string>
+    <string name="mohr_theta_s">Ángulo de x al plano de cortante máximo</string>
+    <string name="mohr_tap_apply">Toca uno para ver su plano en el círculo.</string>
+    <string name="mohr_shear_planes">Planos de cortante máximo</string>
+    <string name="mohr_el_note_stress3">Las flechas crecen con la tensión, en las tres caras visibles: azul normal, naranja cortante. σ positivo sale de la cara.</string>
+    <string name="mohr_components">Componentes x, y</string>
+    <string name="mohr_points">Puntos A, B</string>
+    <string name="mohr_points_none">Ningún círculo centrado en el eje σ pasa por A y B.</string>
+    <string name="mohr_from_a">θ se mide desde la cara A.</string>
+    <string name="mohr_theta_ab">Ángulo de la cara A a la cara B</string>
     <string name="mohr_angles_note">θ: desde x en el plano xy; φ: desde z. Arrastra en el diagrama para mover el punto del plano.</string>
 </resources>

@@ -52,6 +52,25 @@ object Mohr {
         return normaliseHalfTurn((phi + alpha) / 2)
     }
 
+    /** A plane state read from two faces A and B: its components with A as the x face, and the angle A→B. */
+    data class FromPoints(val sx: Double, val sy: Double, val txy: Double, val thetaAB: Double)
+
+    /**
+     * The circle through A = (σA, τA) and B = (σB, τB), centred on the σ axis. With [tb] null, B is
+     * taken at 180° on the circle (the face at 90° to A), so τB = −τA. Null when no such circle exists.
+     */
+    fun fromPoints(sa: Double, ta: Double, sb: Double, tb: Double?): FromPoints? {
+        val tB = tb ?: -ta
+        val scale = abs(sa) + abs(sb) + abs(ta) + abs(tB) + 1e-300
+        val c = if (abs(sa - sb) <= 1e-12 * scale) {
+            if (abs(ta + tB) <= 1e-12 * scale && abs(ta) > 1e-12 * scale) sa else return null
+        } else (sa * sa + ta * ta - sb * sb - tB * tB) / (2 * (sa - sb))
+        val theta = normaliseHalfTurn((atan2(ta, sa - c) - atan2(tB, sb - c)) / 2)
+        // A turn of exactly 180° on the circle is the face at +90°, not −90°.
+        val t = if (abs(abs(theta) - Math.PI / 2) < 1e-12) Math.PI / 2 else theta
+        return FromPoints(sa, 2 * c - sa, ta, t)
+    }
+
     /** Folds an angle into [−π/2, π/2): planes repeat every half turn. */
     fun normaliseHalfTurn(t: Double): Double {
         var x = t
@@ -111,6 +130,43 @@ object Mohr {
         val c = sq.map { sqrt(it / sum) }
         return DoubleArray(3) { i -> (0 until 3).sumOf { k -> c[k] * p.directions[k][i] } }
     }
+
+    /** Right-handed principal axes (1, 2, 3), each with a non-negative leading component where possible. */
+    fun principalFrame(p: Principal3D): List<DoubleArray> {
+        val a = tidy(p.directions[0]); val b = tidy(p.directions[1])
+        return listOf(a, b, cross(a, b))
+    }
+
+    /**
+     * Axes of the element of maximum shear: the bisectors of axes 1 and 3, with axis 2 kept.
+     * Its faces carry τ_max = (σ1 − σ3)/2 and normal stress (σ1 + σ3)/2.
+     */
+    fun maxShearFrame(p: Principal3D): List<DoubleArray> {
+        val (n1, n2, n3) = principalFrame(p)
+        val k = 1 / sqrt(2.0)
+        val a = DoubleArray(3) { k * (n1[it] + n3[it]) }
+        val c = DoubleArray(3) { k * (n3[it] - n1[it]) }
+        return listOf(a, n2, c)
+    }
+
+    /** Components T′_ij = e_i · T e_j of [t] in the orthonormal frame [e]. */
+    fun inFrame(t: Tensor3, e: List<DoubleArray>): Tensor3 {
+        val m = t.matrix()
+        fun c(i: Int, j: Int) = (0 until 3).sumOf { r -> (0 until 3).sumOf { s -> e[i][r] * m[r][s] * e[j][s] } }
+        return Tensor3(c(0, 0), c(1, 1), c(2, 2), c(0, 1), c(1, 2), c(0, 2))
+    }
+
+    /** Angles (radians) between the unit vector [n] and the x, y and z axes. */
+    fun axisAngles(n: DoubleArray) = DoubleArray(3) { Math.acos(n[it].coerceIn(-1.0, 1.0)) }
+
+    private fun tidy(v: DoubleArray): DoubleArray {
+        val lead = v.firstOrNull { abs(it) > 1e-12 } ?: 1.0
+        return if (lead < 0) DoubleArray(3) { -v[it] + 0.0 } else v.copyOf()
+    }
+
+    private fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(
+        a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0],
+    )
 
     /** Normal and shear magnitude on the plane with normal [n] (any length, not zero). */
     fun onPlane3D(t: Tensor3, n: DoubleArray): Point? {
