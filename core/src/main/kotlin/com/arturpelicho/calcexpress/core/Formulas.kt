@@ -38,7 +38,22 @@ class Formula(
     val preview: String,
     val vars: List<FormulaVar> = emptyList(),
     val build: (UnitSystem) -> List<MathRow>,
-)
+) {
+    /** The formula's rows with every box tagged with its unit, so the unit bar can offer alternatives. */
+    fun rows(sys: UnitSystem): List<MathRow> = build(sys).also { lines ->
+        for (line in lines) for (r in line.allRows()) for (n in r.items) {
+            if (n is Slot && n.label != null) n.baseUnit = unitFor(n.label, sys)
+        }
+    }
+
+    /** Unit of the variable [label]: exact match first, then its base symbol (σ_x → σ, v₁ → v). */
+    fun unitFor(label: String, sys: UnitSystem): String? {
+        val byName = vars.flatMap { v -> v.label.split(",").map { it.trim() to v } }
+        val base = label.substringBefore('_').trimEnd { it in "₀₁₂₃₄₅₆₇₈₉" }
+        val v = byName.firstOrNull { it.first == label }?.second ?: byName.firstOrNull { it.first == base }?.second
+        return v?.let { if (sys == UnitSystem.METRIC) it.metric else it.imperial }
+    }
+}
 
 /** Small DSL that builds editor rows. */
 class RowBuilder {

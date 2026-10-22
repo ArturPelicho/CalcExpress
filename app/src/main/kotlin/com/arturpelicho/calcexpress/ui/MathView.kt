@@ -55,6 +55,7 @@ import com.arturpelicho.calcexpress.core.Slot
 import com.arturpelicho.calcexpress.core.Sym
 import com.arturpelicho.calcexpress.core.allRows
 import com.arturpelicho.calcexpress.core.SymKind
+import com.arturpelicho.calcexpress.core.UnitOptions
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -260,21 +261,40 @@ private fun NodeView(node: Node, row: MathRow, index: Int, ctx: MathCtx, size: F
         }
         is Slot -> {
             val editor = ctx.editor
-            val label = node.label
-            if (node.content.isEmpty && ctx.labels && label != null) {
-                Text(mathLabel(label), style = mathStyle(ctx.font, size, ctx.colors.text, italic = true), modifier = Modifier.padding(horizontal = 0.5.dp))
-            } else if (node.content.isEmpty) {
-                val active = editor != null && editor.caret.row === node.content
-                CaseBox(node.label, size, ctx, active, onTap = { editor?.setCaret(node.content, 0) })
-            } else {
-                MathRowView(
-                    node.content, ctx, size,
-                    modifier = Modifier
-                        .border(0.8.dp, ctx.colors.caseBorder.copy(alpha = 0.45f), RoundedCornerShape(3.dp))
-                        .padding(horizontal = 2.dp),
-                )
-            }
+            val active = editor != null && editor.caret.row === node.content
+            val unit = node.unit?.symbol ?: node.baseUnit
+            if (unit != null && !ctx.labels && (active || node.unit != null || !node.content.isEmpty)) {
+                // The box's unit follows it, small and in the accent colour: "2 t", "E GJ×10⁹".
+                BaselineRow {
+                    SlotView(node, ctx, size, active)
+                    Text(unitLabel(unit, node.unit?.factor), style = mathStyle(ctx.font, size * 0.6f, ctx.colors.accent), modifier = Modifier.padding(start = 2.dp, end = 1.dp))
+                }
+            } else SlotView(node, ctx, size, active)
         }
+    }
+}
+
+/** "GJ" with a tiny "×10⁹" raised after it, so the scale stays visible. */
+private fun unitLabel(symbol: String, factor: Double?): AnnotatedString = buildAnnotatedString {
+    append(mathLabel(symbol))
+    val hint = factor?.let { UnitOptions.powerHint(it) } ?: return@buildAnnotatedString
+    withStyle(SpanStyle(fontSize = 0.62.em, baselineShift = BaselineShift(0.55f))) { append(mathLabel(hint)) }
+}
+
+@Composable
+private fun SlotView(node: Slot, ctx: MathCtx, size: Float, active: Boolean) {
+    val label = node.label
+    if (node.content.isEmpty && ctx.labels && label != null) {
+        Text(mathLabel(label), style = mathStyle(ctx.font, size, ctx.colors.text, italic = true), modifier = Modifier.padding(horizontal = 0.5.dp))
+    } else if (node.content.isEmpty) {
+        CaseBox(node.label, size, ctx, active, onTap = { ctx.editor?.setCaret(node.content, 0) })
+    } else {
+        MathRowView(
+            node.content, ctx, size,
+            modifier = Modifier
+                .border(0.8.dp, ctx.colors.caseBorder.copy(alpha = 0.45f), RoundedCornerShape(3.dp))
+                .padding(horizontal = 2.dp),
+        )
     }
 }
 

@@ -36,7 +36,13 @@ object MathCodec {
             is FuncCall -> { sb.append('c'); text(n.fn.name, sb); row(n.argument, sb) }
             is Integral -> { sb.append('i'); row(n.lower, sb); row(n.upper, sb); row(n.body, sb); row(n.variable, sb) }
             is Derivative -> { sb.append('d'); row(n.variable, sb); row(n.body, sb) }
-            is Slot -> { sb.append('l'); text(n.label ?: "", sb); sb.append(if (n.label == null) '0' else '1'); row(n.content, sb) }
+            is Slot -> if (n.baseUnit == null && n.unit == null) {
+                sb.append('l'); text(n.label ?: "", sb); sb.append(if (n.label == null) '0' else '1'); row(n.content, sb)
+            } else {
+                // A box with units: label, formula unit, typed unit and its factor.
+                sb.append('u'); text(n.label ?: "", sb); text(n.baseUnit ?: "", sb)
+                text(n.unit?.symbol ?: "", sb); text(n.unit?.factor?.toString() ?: "", sb); row(n.content, sb)
+            }
             is MatrixNode -> {
                 sb.append('m').append(n.rowCount).append(',').append(n.colCount).append(',')
                 n.cells.forEach { row(it, sb) }
@@ -80,6 +86,13 @@ object MathCodec {
             'i' -> Integral(row(), row(), row(), row())
             'd' -> Derivative(row(), row())
             'l' -> { val label = text(); val has = s[i++] == '1'; Slot(if (has) label else null, row()) }
+            'u' -> {
+                val label = text().ifEmpty { null }
+                val base = text().ifEmpty { null }
+                val symbol = text(); val factor = text().toDoubleOrNull()
+                val unit = if (symbol.isNotEmpty() && factor != null) UnitOption(symbol, factor) else null
+                Slot(label, row(), base, unit)
+            }
             'm' -> {
                 val rows = int(); expect(','); val cols = int(); expect(',')
                 MatrixNode(rows, cols, MutableList(rows * cols) { row() })
