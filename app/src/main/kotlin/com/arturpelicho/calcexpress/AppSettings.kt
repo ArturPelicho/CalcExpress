@@ -12,7 +12,7 @@ import java.util.Locale
 enum class ThemeChoice { CLEAR, DARK, SYSTEM }
 enum class FontChoice { LATEX, SANS }
 
-/** App languages; en-GB is the default. */
+/** App languages; until one is chosen the phone's language is used when supported, else en-GB. */
 enum class AppLanguage(val tag: String, val nativeName: String) {
     EN_GB("en-GB", "English (UK)"),
     PT_PT("pt-PT", "Português (Portugal)"),
@@ -23,6 +23,15 @@ enum class AppLanguage(val tag: String, val nativeName: String) {
 
     val locale: Locale get() = Locale.forLanguageTag(tag)
     val code: String get() = tag.substring(0, 2)
+
+    companion object {
+        /** The supported language matching the phone's language, or en-GB. */
+        fun fromSystem(): AppLanguage {
+            @Suppress("DEPRECATION")
+            val system = android.content.res.Resources.getSystem().configuration.locale?.language
+            return entries.firstOrNull { it.code == system } ?: EN_GB
+        }
+    }
 }
 
 /** Preferences backed by SharedPreferences and exposed as Compose state. */
@@ -35,7 +44,7 @@ class AppSettings(context: Context) {
         private set
     var units by mutableStateOf(enumPref("units", UnitSystem.METRIC))
         private set
-    var language by mutableStateOf(enumPref("language", AppLanguage.EN_GB))
+    var language by mutableStateOf(enumPref("language", AppLanguage.fromSystem()))
         private set
     var angle by mutableStateOf(enumPref("angle", AngleUnit.DEG))
         private set
@@ -65,7 +74,7 @@ class AppSettings(context: Context) {
         /** Wraps [base] so resources use the chosen app language. */
         fun localized(base: Context): Context {
             val name = base.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("language", null)
-            val lang = AppLanguage.entries.firstOrNull { it.name == name } ?: AppLanguage.EN_GB
+            val lang = AppLanguage.entries.firstOrNull { it.name == name } ?: AppLanguage.fromSystem()
             Locale.setDefault(lang.locale)
             val config = Configuration(base.resources.configuration)
             config.setLocale(lang.locale)

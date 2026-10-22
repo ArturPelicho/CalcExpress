@@ -1,72 +1,117 @@
 # CalcExpress
 
-A fast, intuitive scientific calculator for Android, built to fix what stock calculators get wrong:
-no nested menus, real maths layout, equations and systems solved straight from the keyboard.
+**A fast, complete scientific calculator for Android. Free, with no ads, no accounts and no paid tiers, and it will stay that way.**
+
+CalcExpress is built to fix what stock calculators get wrong. There are no nested menus, the maths is laid out the way you would write it on paper, and equations, systems, integrals and differential equations are solved straight from the keyboard.
+
+> **Free, complete, forever.** Every feature is available to everyone at no cost. There are no ads, in-app purchases, subscriptions, "pro" versions, trackers or data collection, and none will be added later.
+
+---
 
 ## Install
 
-Download the latest `CalcExpress-x.y.z.apk` from [Releases](https://github.com/ArturPelicho/CalcExpress/releases/latest)
-and open it on your phone (allow "install unknown apps" for your browser the first time).
-After that, the app checks for updates itself: **Settings → About the app → Check for updates**,
-or the banner that appears on the calculator when a new version is out.
+1. Download the latest `CalcExpress-x.y.z.apk` from **[Releases](https://github.com/ArturPelicho/CalcExpress/releases/latest)**.
+2. Open it on your phone. The first time, Android asks you to allow "install unknown apps" for your browser or file manager.
+3. From then on the app updates itself. Use **Settings → About the app → Check for updates**, or tap the banner that appears on the calculator when a new version is out.
 
-## What it does (v0.1)
+Requires Android 6.0 or newer.
 
-- **Calculation area** (≥ ⅓ of the screen) rendered like LaTeX (Computer Modern font): fractions,
-  powers, roots, integrals and brackets drawn properly.
-- **Cases**: every template (fraction, power, integral, formula...) shows boxes to fill. Tap a box or
-  use ⇥ to jump to the next empty one.
-- **^**: short press = square; long press = power mode (exponent outlined), long press again = back down.
-- **Brackets by level**: ( ) → [ ] → { } chosen automatically from the nesting, and they grow.
-- **Variables and equations**: any letter (Latin or Greek, toggle `abc/αβγ`; long press = capital)
-  is a variable. `=□` writes an equality, `=` solves it (all real roots); `⊕=` adds another equation
-  (`□ = □`) to solve systems.
-- **Calculus**: `∫` definite integrals, nested for double/triple integrals, with **⇅∫** to change the
-  order of integration (constant limits); `d/dx` derivatives (usable inside equations).
-- **Graphs** (📈): functions of one variable, equations (roots marked), integral areas and double-integral regions.
-  Pinch to zoom, drag to pan.
-- **DEG / RAD / GRAD** toggle always visible.
-- **Menu** (top left): Calculator (history, tips), Conversions (13 categories), Formulas
-  (general maths, calculus & series, mechanical, computer, fluids, electrotechnics). Tap a formula and
-  it opens with its boxes ready; leave the unknown empty and press `=`.
-- **Settings** (top right): Appearance (Clear / Dark OLED true black / system; LaTeX or sans font),
-  Preferences (metric/imperial, language: English UK, Português, Français, Deutsch, Italiano, Castellano),
-  About (version, updates, privacy, licences).
+## Features
 
-## Project layout
+### Calculator
+- **Real maths layout** in a LaTeX-style font (Computer Modern). Fractions, powers, roots, integrals, matrices and brackets are drawn properly, and the calculation area always takes at least ⅓ of the screen.
+- **Boxes ("cases") to fill.** Every template (fraction, power, integral, formula…) shows empty boxes. Tap one, or use ⇥ to jump to the next empty box.
+- **`^` key.** A short press squares; a long press enters the exponent (outlined), and another long press leaves it.
+- **Automatic bracket levels.** Brackets change ( ) → [ ] → { } with nesting and grow with their content.
+- **Latin and Greek letters** are always one tap away (`abc/αβγ`). A long press gives the capital.
+- **DEG / RAD / GRAD** toggle, always visible.
+- **Exact results** where they exist (√2/2, π/3, 3/4…), next to the decimal value.
+- **Persistent history.** Past calculations stay after closing the app; tap one to reuse it.
 
-| Module | What |
-| --- | --- |
-| `core/` | Pure Kotlin: expression tree and editor, parser, evaluator, equation/system solver, numeric integration, units, formula catalogue. Unit-tested (`./gradlew :core:test`). |
-| `app/` | Android app (Kotlin, Jetpack Compose, single activity). |
+### Equations and systems
+- `=□` writes an equation and `=` solves it. You get all real roots, plus complex roots for polynomials (`x² + 1 = 0 → x = ±i`).
+- Equal roots are shown on one line (`x₁ = x₂ = 3`).
+- `⊕=` adds another equation for systems, linear or non-linear.
+- **Systems with too few equations** are solved for as many variables as possible, in the order x, y, z, α, β, γ, σ, τ; the rest stay as parameters.
 
-Build flavours:
+### Calculus
+- **Definite integrals,** nested for double and triple integrals.
+- **Indefinite integrals** (antiderivatives `+ C`). Leave the limits empty.
+- **Reordering integration** (⇅∫), including inner limits that depend on the outer variable. The region is split automatically when needed.
+- **Derivatives** `d/dx`, numeric or symbolic.
+- **Differential equations:** first order (separable, linear) and second order with constant coefficients, solved symbolically. Initial conditions are lines like `x = 0`, `y = 1`, `d/dx(y) = 0`. When no closed form exists, a numeric solution is computed.
+- **Matrices:** determinants, inverses, products and linear systems.
 
-- `github` – sideloaded APK published to GitHub Releases, with the in-app updater
-  (`INTERNET` + `REQUEST_INSTALL_PACKAGES`).
-- `play` – Google Play build. **No self-updater and no internet permission**, because Play policy forbids
-  apps updating themselves outside Play.
+### Graphs
+- Functions of one variable, equation roots, integral areas and double-integral regions.
+- Several functions on the same axes (hold ⊕= for a plain new line).
+- Pinch to zoom, drag to pan, tap to read the value of every curve.
 
-Android support: `minSdk 23` (Android 6.0, ~99% of active devices; current AndroidX/Compose need it),
-`targetSdk 36` (Google Play's current requirement).
+### Conversions
+- 13 categories: length, area, volume, mass, temperature, speed, time, pressure, energy, power, force, angle and data. Metric and imperial units, with translated names.
 
-## Releases and signing
+### Formulas
+Grouped by area. Tap an area to see its formulas, then tap a formula to open it in the calculator with its boxes ready. Leave the unknown empty and press `=`.
+- **Mathematics:** general, calculus & series, matrices.
+- **Engineering:** mechanics, stress & strain, beams/torsion/buckling, stress states & failure criteria, fluid mechanics, electrotechnics, computing.
 
-- `CI` workflow: tests + debug APKs on every pull request / branch push.
-- `Release` workflow: every push to `main` builds a **signed** release APK and publishes it as
-  `v<version.txt>.<commit count>` (e.g. `v0.1.42`). The last number is the `versionCode`, so each
-  release installs over the previous one.
-- Signing needs two repository secrets: `CALCEXPRESS_KEYSTORE_BASE64` (base64 of the PKCS12 keystore)
-  and `CALCEXPRESS_SIGNING_PASSWORD` (store and key password; alias `calcexpress`). The keystore is never
-  committed. Keep a backup: losing it means users must uninstall to update.
-- Google Play later: enrol in Play App Signing and use this key as the *upload key*. Play then re-signs
-  with its own key, so the Play build and the GitHub APK cannot update each other (users pick one).
+### Mohr's circle (interactive)
+- Stress or strain, in **2D or 3D**.
+- **2D:** enter σx, σy, τxy, or two points A and B of any element. Choose the plane by its angle θ or its normal, or drag around the circle. The 2θ arc and a rotated element follow your finger.
+- **3D:** symmetric tensor matrix, three circles with the admissible region shaded, and the point of a plane given by its normal.
+- **Stress/strain fields:** entries can be functions of x, y, z, evaluated at a point.
+- **Results:** principal values and directions, maximum shear, invariants I₁, I₂, I₃, and the components on the chosen plane.
+
+### Settings
+- **Appearance:** Clear (whites, creams and blues), Dark (true OLED black) or follow the system; LaTeX or sans-serif font.
+- **Preferences:** metric or imperial units, language, angle unit.
+- **About:** version, updates, privacy policy, licences.
+
+## Languages
+
+The app is fully translated into **English (UK), Português (Portugal), Français, Deutsch, Italiano and Castellano**. This covers every screen, tip, formula name and unit name. On first launch it uses your phone's language if it is one of these, otherwise English. You can change it any time in Settings → Preferences.
 
 ## Privacy
 
-See [PRIVACY.md](PRIVACY.md). No personal data, no ads, no analytics.
+No personal data is collected. There are no ads, no analytics and no tracking, and your calculations stay on your device. See [PRIVACY.md](PRIVACY.md).
+
+## Roadmap
+
+Ideas being considered (suggestions welcome in [Issues](https://github.com/ArturPelicho/CalcExpress/issues)):
+- Step-by-step solutions for equations, integrals and derivatives.
+- More formula areas: thermodynamics, heat transfer, structures, statistics and probability, finance.
+- Statistics mode (data lists, mean/σ, regression with plots).
+- Complex-number arithmetic and polar/exponential forms everywhere.
+- Unit-aware calculation (type `3 m + 20 cm`).
+- Saving and naming your own formulas and constants, plus a physical-constants table.
+- 3D surface plots and parametric/polar curves.
+- Copy results as LaTeX or image, and share.
+- Home-screen widget and landscape/tablet layouts.
+- Google Play release (a Play build without the self-updater is already prepared).
+
+## For developers
+
+| Module | What |
+| --- | --- |
+| `core/` | Pure Kotlin: expression tree and editor, parser, evaluator, symbolic algebra (derivatives, antiderivatives, exact values), equation/system/ODE solvers, numeric integration, Mohr's circle, units, formula catalogue. Unit-tested (`./gradlew :core:test`). |
+| `app/` | Android app (Kotlin, Jetpack Compose, single activity). |
+
+Build flavours:
+- `github`: the sideloaded APK published to GitHub Releases, with the in-app updater (`INTERNET` + `REQUEST_INSTALL_PACKAGES`).
+- `play`: the Google Play build, with **no self-updater and no internet permission**, because Play policy forbids apps updating themselves outside Play.
+
+Android support: `minSdk 23` (Android 6.0), `targetSdk 36`.
+
+### Releases and signing
+- The **CI** workflow runs tests and builds debug APKs on every pull request and branch push.
+- The **Release** workflow runs on every push to `main`. It builds a **signed** release APK and publishes it as `v<version.txt>.<commit count>` (e.g. `v0.1.42`). The last number is the `versionCode`, so each release installs over the previous one.
+- Signing needs two repository secrets:
+  - `CALCEXPRESS_KEYSTORE_BASE64`: base64 of the PKCS12 keystore.
+  - `CALCEXPRESS_SIGNING_PASSWORD`: the store and key password (alias `calcexpress`).
+
+  The keystore is never committed. Keep a backup, because losing it means users must uninstall to update.
+- Google Play later: enrol in Play App Signing and use this key as the *upload key*. Play then re-signs with its own key, so the Play build and the GitHub APK cannot update each other (users pick one).
 
 ## Licences
 
-Code © Artur Pelicho. Font: CMU Serif (Computer Modern Unicode), SIL Open Font License 1.1 – see
-[licenses/CMU-Serif-OFL.txt](licenses/CMU-Serif-OFL.txt).
+Code © Artur Pelicho. Font: CMU Serif (Computer Modern Unicode), SIL Open Font License 1.1. See [licenses/CMU-Serif-OFL.txt](licenses/CMU-Serif-OFL.txt).
