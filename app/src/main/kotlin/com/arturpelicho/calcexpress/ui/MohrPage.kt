@@ -30,6 +30,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -383,13 +385,19 @@ internal fun MohrCanvas3D(
 ) {
     val c = LocalCalcColors.current
     val (big, bigR) = p.circles[2]
-    fun pick(size: Size, pos: Offset) {
+    // A plane's shear magnitude has no sign in 3D: the diagram is symmetric, and the point
+    // stays on the side (τ > 0 or τ < 0) where the finger put it.
+    var below by remember { mutableStateOf(false) }
+    val pickNow by rememberUpdatedState { size: Size, pos: Offset ->
         val f = mohrFrame(size, p.values[2], p.values[0], bigR)
+        below = pos.y > f.oy
         onPick?.invoke((pos.x - f.ox) / f.k.toDouble(), abs((f.oy - pos.y) / f.k.toDouble()))
     }
+    fun pick(size: Size, pos: Offset) = pickNow(size, pos)
+    // Keyed on the values, not on p: a new (equal) Principal3D each frame would restart the drag.
     val gestures = if (onPick == null) Modifier else Modifier
-        .pointerInput(p) { detectTapGestures { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) } }
-        .pointerInput(p) {
+        .pointerInput(p.values) { detectTapGestures { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) } }
+        .pointerInput(p.values) {
             detectDragGestures(onDragStart = { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) }) { change, _ ->
                 change.consume()
                 pick(Size(size.width.toFloat(), size.height.toFloat()), change.position)
@@ -411,10 +419,10 @@ internal fun MohrCanvas3D(
             tag("$s${"₁₂₃"[i]} = ${short(v)}", o, centre, c, c.accent, below = true, stagger = i == 1)
         }
         if (on != null) {
-            val o = Offset(f.x(on.normal), f.y(on.shear))
+            val o = Offset(f.x(on.normal), f.y(if (below) -on.shear else on.shear))
             drawCircle(c.highlight, 6.dp.toPx(), o)
             drawCircle(c.display, 2.5.dp.toPx(), o)
-            tag("n (${short(on.normal)}, ${short(on.shear)})", o, centre, c, c.highlight, strong = true)
+            tag("n (${short(on.normal)}, ${short(if (below) -on.shear else on.shear)})", o, centre, c, c.highlight, strong = true)
         }
     }
 }
