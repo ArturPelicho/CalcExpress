@@ -103,7 +103,7 @@
     <string name="mohr_fill">Escreve um número em todos os campos.</string>
     <string name="mohr_strain_note">γ é a distorção (de engenharia), positiva quando o ângulo reto entre x e y diminui; o círculo usa γ/2.</string>
     <string name="mohr_zero_normal">A normal não pode ser nula.</string>
-    <string name="mohr_points_note">x e y podem ser duas faces perpendiculares quaisquer, como os pontos A e B nos extremos de um diâmetro; θ é medido a partir de x.</string>
+    <string name="mohr_points_note">A e B são duas faces quaisquer do elemento, dadas pelos seus pontos no círculo. Deixa τ_B vazio quando B é a face a 90° de A (180° no círculo).</string>
     <string name="mohr_point">No ponto (x, y, z)</string>
     <string name="mohr_matrix">Matriz do tensor</string>
     <string name="mohr_matrix_note">Fora da diagonal estão as componentes do tensor ε_ij = γ_ij/2; os resultados mostram γ.</string>
@@ -115,5 +115,16 @@
     <string name="mohr_el_shear">Corte máximo</string>
     <string name="mohr_el_note_stress">As setas crescem com a tensão. Na face x, σ positivo aponta para a direita e τ positivo para cima; na face superior τ aponta para a direita.</string>
     <string name="mohr_el_note_strain">Deformação exagerada para se ver bem; o elemento original está a tracejado.</string>
+    <string name="mohr_planes">Planos principais e de corte máximo</string>
+    <string name="mohr_theta_p">Ângulo de x até à direção principal 1</string>
+    <string name="mohr_theta_s">Ângulo de x até ao plano de corte máximo</string>
+    <string name="mohr_tap_apply">Toca num deles para ver o plano no círculo.</string>
+    <string name="mohr_shear_planes">Planos de corte máximo</string>
+    <string name="mohr_el_note_stress3">As setas crescem com a tensão, nas três faces viradas para ti: azul normal, laranja corte. σ positivo aponta para fora da face.</string>
+    <string name="mohr_components">Componentes x, y</string>
+    <string name="mohr_points">Pontos A, B</string>
+    <string name="mohr_points_none">Nenhum círculo centrado no eixo σ passa por A e B.</string>
+    <string name="mohr_from_a">θ é medido a partir da face A.</string>
+    <string name="mohr_theta_ab">Ângulo da face A até à face B</string>
     <string name="mohr_angles_note">θ: a partir de x no plano xy; φ: a partir de z. Arrasta no diagrama para mover o ponto do plano.</string>
 </resources>

@@ -103,7 +103,7 @@
     <string name="mohr_fill">Inserisci un numero in ogni campo.</string>
     <string name="mohr_strain_note">γ è lo scorrimento angolare, positivo quando l’angolo retto tra x e y diminuisce; il cerchio usa γ/2.</string>
     <string name="mohr_zero_normal">La normale non può essere nulla.</string>
-    <string name="mohr_points_note">x e y possono essere due facce perpendicolari qualsiasi, come i punti A e B agli estremi di un diametro; θ si misura da x.</string>
+    <string name="mohr_points_note">A e B sono due facce qualsiasi dell’elemento, date dai loro punti sul cerchio. Lascia τ_B vuoto se B è la faccia a 90° da A (180° sul cerchio).</string>
     <string name="mohr_point">Nel punto (x, y, z)</string>
     <string name="mohr_matrix">Matrice del tensore</string>
     <string name="mohr_matrix_note">Fuori diagonale ci sono le componenti del tensore ε_ij = γ_ij/2; i risultati mostrano γ.</string>
@@ -115,5 +115,16 @@
     <string name="mohr_el_shear">Taglio max.</string>
     <string name="mohr_el_note_stress">Le frecce crescono con la tensione. Sulla faccia x, σ positivo punta a destra e τ positivo in alto; sulla faccia superiore τ punta a destra.</string>
     <string name="mohr_el_note_strain">Deformazione esagerata per chiarezza; l’elemento originale è tratteggiato.</string>
+    <string name="mohr_planes">Piani principali e di taglio max.</string>
+    <string name="mohr_theta_p">Angolo da x alla direzione principale 1</string>
+    <string name="mohr_theta_s">Angolo da x al piano di taglio massimo</string>
+    <string name="mohr_tap_apply">Toccane uno per vedere il piano sul cerchio.</string>
+    <string name="mohr_shear_planes">Piani di taglio massimo</string>
+    <string name="mohr_el_note_stress3">Le frecce crescono con la tensione, sulle tre facce visibili: blu normale, arancione taglio. σ positivo esce dalla faccia.</string>
+    <string name="mohr_components">Componenti x, y</string>
+    <string name="mohr_points">Punti A, B</string>
+    <string name="mohr_points_none">Nessun cerchio centrato sull’asse σ passa per A e B.</string>
+    <string name="mohr_from_a">θ si misura dalla faccia A.</string>
+    <string name="mohr_theta_ab">Angolo dalla faccia A alla faccia B</string>
     <string name="mohr_angles_note">θ: da x nel piano xy; φ: da z. Trascina sul diagramma per spostare il punto del piano.</string>
 </resources>

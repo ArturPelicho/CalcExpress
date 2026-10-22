@@ -103,7 +103,7 @@
     <string name="mohr_fill">Bitte in jedes Feld eine Zahl eingeben.</string>
     <string name="mohr_strain_note">γ ist die Gleitung, positiv wenn der rechte Winkel zwischen x und y kleiner wird; der Kreis verwendet γ/2.</string>
     <string name="mohr_zero_normal">Die Normale darf nicht null sein.</string>
-    <string name="mohr_points_note">x und y können zwei beliebige senkrechte Flächen sein, etwa die Punkte A und B an den Enden eines Durchmessers; θ wird ab x gemessen.</string>
+    <string name="mohr_points_note">A und B sind zwei beliebige Flächen des Elements, als ihre Punkte auf dem Kreis. τ_B leer lassen, wenn B die Fläche 90° zu A ist (180° im Kreis).</string>
     <string name="mohr_point">Im Punkt (x, y, z)</string>
     <string name="mohr_matrix">Tensormatrix</string>
     <string name="mohr_matrix_note">Außerhalb der Diagonale stehen Tensorkomponenten ε_ij = γ_ij/2; Ergebnisse zeigen γ.</string>
@@ -115,5 +115,16 @@
     <string name="mohr_el_shear">Max. Schub</string>
     <string name="mohr_el_note_stress">Die Pfeile wachsen mit der Spannung. Auf Fläche x zeigt positives σ nach rechts und positives τ nach oben; auf der oberen Fläche zeigt τ nach rechts.</string>
     <string name="mohr_el_note_strain">Verformung zur Deutlichkeit überhöht; das ursprüngliche Element ist gestrichelt.</string>
+    <string name="mohr_planes">Haupt- und Schubebenen</string>
+    <string name="mohr_theta_p">Winkel von x zur Hauptrichtung 1</string>
+    <string name="mohr_theta_s">Winkel von x zur Ebene der größten Schubspannung</string>
+    <string name="mohr_tap_apply">Antippen, um die Ebene im Kreis zu zeigen.</string>
+    <string name="mohr_shear_planes">Ebenen größter Schubspannung</string>
+    <string name="mohr_el_note_stress3">Die Pfeile wachsen mit der Spannung, auf den drei sichtbaren Flächen: blau Normal-, orange Schubspannung. Positives σ zeigt aus der Fläche.</string>
+    <string name="mohr_components">Komponenten x, y</string>
+    <string name="mohr_points">Punkte A, B</string>
+    <string name="mohr_points_none">Kein Kreis mit Mittelpunkt auf der σ-Achse geht durch A und B.</string>
+    <string name="mohr_from_a">θ wird ab Fläche A gemessen.</string>
+    <string name="mohr_theta_ab">Winkel von Fläche A zu Fläche B</string>
     <string name="mohr_angles_note">θ: ab x in der xy-Ebene; φ: ab z. Im Diagramm ziehen, um den Punkt der Ebene zu verschieben.</string>
 </resources>

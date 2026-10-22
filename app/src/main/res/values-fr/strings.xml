@@ -103,7 +103,7 @@
     <string name="mohr_fill">Saisissez un nombre dans chaque champ.</string>
     <string name="mohr_strain_note">γ est la distorsion angulaire, positive quand l’angle droit entre x et y diminue ; le cercle utilise γ/2.</string>
     <string name="mohr_zero_normal">La normale ne peut pas être nulle.</string>
-    <string name="mohr_points_note">x et y peuvent être deux faces perpendiculaires quelconques, comme les points A et B aux extrémités d’un diamètre ; θ est mesuré depuis x.</string>
+    <string name="mohr_points_note">A et B sont deux faces quelconques de l’élément, données par leurs points sur le cercle. Laissez τ_B vide si B est la face à 90° de A (180° sur le cercle).</string>
     <string name="mohr_point">Au point (x, y, z)</string>
     <string name="mohr_matrix">Matrice du tenseur</string>
     <string name="mohr_matrix_note">Hors diagonale : composantes du tenseur ε_ij = γ_ij/2 ; les résultats donnent γ.</string>
@@ -115,5 +115,16 @@
     <string name="mohr_el_shear">Cisaillement max.</string>
     <string name="mohr_el_note_stress">Les flèches grandissent avec la contrainte. Sur la face x, σ positif pointe à droite et τ positif vers le haut ; sur la face supérieure τ pointe à droite.</string>
     <string name="mohr_el_note_strain">Déformation exagérée pour la lisibilité ; l’élément initial est en pointillés.</string>
+    <string name="mohr_planes">Plans principaux et de cisaillement max.</string>
+    <string name="mohr_theta_p">Angle de x à la direction principale 1</string>
+    <string name="mohr_theta_s">Angle de x au plan de cisaillement maximal</string>
+    <string name="mohr_tap_apply">Touchez-en un pour voir son plan sur le cercle.</string>
+    <string name="mohr_shear_planes">Plans de cisaillement maximal</string>
+    <string name="mohr_el_note_stress3">Les flèches grandissent avec la contrainte, sur les trois faces visibles : bleu normale, orange cisaillement. σ positif sort de la face.</string>
+    <string name="mohr_components">Composantes x, y</string>
+    <string name="mohr_points">Points A, B</string>
+    <string name="mohr_points_none">Aucun cercle centré sur l’axe σ ne passe par A et B.</string>
+    <string name="mohr_from_a">θ est mesuré depuis la face A.</string>
+    <string name="mohr_theta_ab">Angle de la face A à la face B</string>
     <string name="mohr_angles_note">θ : depuis x dans le plan xy ; φ : depuis z. Faites glisser sur le diagramme pour déplacer le point du plan.</string>
 </resources>

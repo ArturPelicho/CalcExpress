@@ -104,7 +104,7 @@
     <string name="mohr_fill">Enter a number in every field.</string>
     <string name="mohr_strain_note">γ is the engineering shear strain, positive when the right angle between x and y decreases; the circle uses γ/2.</string>
     <string name="mohr_zero_normal">The normal cannot be zero.</string>
-    <string name="mohr_points_note">x and y can be any two perpendicular faces, such as the points A and B at the ends of a diameter; θ is measured from x.</string>
+    <string name="mohr_points_note">A and B are any two faces of the element, entered as their points on the circle. Leave τ_B empty when B is the face at 90° to A (180° on the circle).</string>
     <string name="mohr_point">At the point (x, y, z)</string>
     <string name="mohr_matrix">Tensor matrix</string>
     <string name="mohr_matrix_note">Off-diagonal entries are tensor components ε_ij = γ_ij/2; results show γ.</string>
@@ -116,5 +116,16 @@
     <string name="mohr_el_shear">Max shear</string>
     <string name="mohr_el_note_stress">Arrows grow with the stress. On face x a positive σ points right and a positive τ points up; on the top face τ points right.</string>
     <string name="mohr_el_note_strain">Deformation exaggerated for clarity; the original element is dashed.</string>
+    <string name="mohr_planes">Principal and max shear planes</string>
+    <string name="mohr_theta_p">Angle from x to principal direction 1</string>
+    <string name="mohr_theta_s">Angle from x to the plane of maximum shear</string>
+    <string name="mohr_tap_apply">Tap one to show its plane on the circle.</string>
+    <string name="mohr_shear_planes">Planes of maximum shear</string>
+    <string name="mohr_el_note_stress3">Arrows grow with the stress, on the three faces facing you: blue normal, orange shear. Positive σ points out of the face.</string>
+    <string name="mohr_components">Components x, y</string>
+    <string name="mohr_points">Points A, B</string>
+    <string name="mohr_points_none">No circle centred on the σ axis passes through A and B.</string>
+    <string name="mohr_from_a">θ is measured from face A.</string>
+    <string name="mohr_theta_ab">Angle from face A to face B</string>
     <string name="mohr_angles_note">θ: from x in the xy-plane; φ: from z. Drag on the diagram to move the plane\'s point.</string>
 </resources>

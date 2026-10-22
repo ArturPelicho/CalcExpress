@@ -124,4 +124,38 @@ class MohrTest {
         val far = Mohr.normalFor(p, 100.0, 100.0)
         assertEquals(1.0, sqrt(far.sumOf { it * it }), 1e-9)
     }
+
+    @Test
+    fun principalAndMaxShearFrames() {
+        val t = Mohr.Tensor3(50.0, -20.0, 10.0, 30.0, 5.0, -15.0)
+        val p = Mohr.principal3D(t)
+        val pr = Mohr.inFrame(t, Mohr.principalFrame(p))
+        assertEquals(p.values[0], pr.xx, 1e-9); assertEquals(p.values[1], pr.yy, 1e-9); assertEquals(p.values[2], pr.zz, 1e-9)
+        assertEquals(0.0, abs(pr.xy) + abs(pr.yz) + abs(pr.xz), 1e-9)
+        val e = Mohr.principalFrame(p)
+        // Right-handed: e1 × e2 · e3 = 1.
+        val c = doubleArrayOf(e[0][1] * e[1][2] - e[0][2] * e[1][1], e[0][2] * e[1][0] - e[0][0] * e[1][2], e[0][0] * e[1][1] - e[0][1] * e[1][0])
+        assertEquals(1.0, (0 until 3).sumOf { c[it] * e[2][it] }, 1e-9)
+        val sh = Mohr.inFrame(t, Mohr.maxShearFrame(p))
+        assertEquals(p.maxShear, abs(sh.xz), 1e-9)
+        assertEquals((p.values[0] + p.values[2]) / 2, sh.xx, 1e-9)
+        assertEquals((p.values[0] + p.values[2]) / 2, sh.zz, 1e-9)
+        assertEquals(PI / 2, Mohr.axisAngles(doubleArrayOf(0.0, 1.0, 0.0))[0], 1e-12)
+    }
+
+    @Test
+    fun circleFromTwoFaces() {
+        // B at 180°: same as the x and y faces.
+        val r = Mohr.fromPoints(80.0, 25.0, -40.0, null)!!
+        assertEquals(-40.0, r.sy, 1e-9); assertEquals(25.0, r.txy, 1e-9); assertEquals(PI / 2, r.thetaAB, 1e-9)
+        // B on any other face: rotating A's state by θAB lands on B.
+        val b = Mohr.rotate2D(80.0, -40.0, 25.0, 0.6)
+        val q = Mohr.fromPoints(80.0, 25.0, b.normal, b.shear)!!
+        assertEquals(-40.0, q.sy, 1e-9)
+        assertEquals(0.6, q.thetaAB, 1e-9)
+        val back = Mohr.rotate2D(q.sx, q.sy, q.txy, q.thetaAB)
+        assertEquals(b.normal, back.normal, 1e-9); assertEquals(b.shear, back.shear, 1e-9)
+        // The same point twice defines no circle.
+        assertEquals(null, Mohr.fromPoints(10.0, 5.0, 10.0, 5.0))
+    }
 }
