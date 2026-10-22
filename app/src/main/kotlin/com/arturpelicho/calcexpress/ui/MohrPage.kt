@@ -406,11 +406,11 @@ internal fun MohrCanvas3D(
     Canvas(modifier.clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds().then(gestures)) {
         val f = mohrFrame(size, p.values[2], p.values[0], bigR)
         val centre = Offset(f.x(big), f.oy)
-        drawScale(f, c, 1.0)
         // Shade the admissible region: inside the big circle, outside the two small ones.
         drawCircle(c.graphFill, (bigR * f.k).toFloat(), centre)
         for ((cc, rr) in p.circles.take(2)) drawCircle(c.display, (rr * f.k).toFloat(), Offset(f.x(cc), f.oy))
-        // Axes after the fills, so the circles never hide them.
+        // Scale and axes after the fills, so the circles never hide them.
+        drawScale(f, c, 1.0)
         drawAxes(f, c, s, if (strain) "γ/2" else "τ", shearDown = false)
         for ((cc, rr) in p.circles) drawCircle(c.graphLine, (rr * f.k).toFloat(), Offset(f.x(cc), f.oy), style = Stroke(2.dp.toPx()))
         p.values.forEachIndexed { i, v ->
