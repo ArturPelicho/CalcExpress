@@ -1,5 +1,21 @@
 package com.arturpelicho.calcexpress.ui
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.em
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -44,6 +60,10 @@ import com.arturpelicho.calcexpress.core.MatrixNode
 import com.arturpelicho.calcexpress.core.Outcome
 import com.arturpelicho.calcexpress.core.Sym
 import com.arturpelicho.calcexpress.core.SymKind
+import com.arturpelicho.calcexpress.core.Slot
+import com.arturpelicho.calcexpress.core.UnitOption
+import com.arturpelicho.calcexpress.core.UnitOptions
+import com.arturpelicho.calcexpress.core.UnitSystem
 import com.arturpelicho.calcexpress.core.Value
 import com.arturpelicho.calcexpress.core.allRows
 import kotlinx.coroutines.CoroutineScope
@@ -160,6 +180,12 @@ class CalcState : KeyboardActions {
         changed()
     }
 
+    /** Units shown in the units bar; starts from the app's preference. */
+    var unitSystem by mutableStateOf<UnitSystem?>(null)
+
+    /** Types the box being filled (and its twins) in [u]. */
+    fun setUnit(u: UnitOption) = edit { activeSlot?.let { setSlotUnit(it, u) } }
+
     override fun digit(d: Char) = edit { digit(d) }
     override fun point() = edit { point() }
     override fun op(o: String) = edit { operator(o) }
@@ -241,6 +267,7 @@ class CalcState : KeyboardActions {
 }
 
 private const val MAX_HISTORY = 50
+private val BAR_HEIGHT = 38.dp
 
 /** Result as text: "= v" for a plain value, one "name = v" line per unknown otherwise. */
 @Composable
@@ -255,12 +282,13 @@ fun outcomeText(o: Outcome): String = when (o) {
     is Outcome.Function -> stringResource(R.string.result_function, o.variable)
     is Outcome.Solutions -> o.values.joinToString("\n") { (name, real) ->
         val vals = real.map { Format.number(it) } + if (o.values.size == 1) o.complex.map(::complexText) else emptyList()
-        if (vals.size == 1) "$name = ${vals[0]}"
+        val unit = o.units[name]?.let { " $it" } ?: ""
+        if (vals.size == 1) "$name = ${vals[0]}$unit"
         else {
             // Equal roots share one line: x₁ = x₂ = 3.
             val indexed = vals.mapIndexed { i, v -> i + 1 to v }
             indexed.groupBy({ it.second }, { it.first }).entries.joinToString("\n") { (text, idx) ->
-                idx.joinToString(" = ") { "$name${subscript(it)}" } + " = " + text
+                idx.joinToString(" = ") { "$name${subscript(it)}" } + " = " + text + unit
             }
         }
     }
@@ -357,6 +385,7 @@ fun CalculatorScreen(state: CalcState, settings: AppSettings, modifier: Modifier
             }
             ResultLine(state)
         }
+        UnitBar(state, settings)
         MainKeyboard(
             actions = state,
             greek = settings.greek,
@@ -389,6 +418,74 @@ private fun MohrOfMatrix(g: GraphSpec.MohrState) {
         MohrCanvas2D(t.xx, t.yy, t.xy, theta, "σ", "τ", false, "x" to "y", Modifier.fillMaxSize()) { theta = it }
     } else {
         MohrCanvas3D(Mohr.principal3D(t), null, "σ", false, Modifier.fillMaxSize())
+    }
+}
+
+/**
+ * Units of the formula box being filled: tap one to type the value in it. The formula's own unit
+ * is outlined when nothing else is chosen; one chip switches between metric and imperial units.
+ */
+@Composable
+private fun UnitBar(state: CalcState, settings: AppSettings) {
+    @Suppress("UNUSED_VARIABLE") val v = state.version
+    val c = LocalCalcColors.current
+    // While a formula with units is open the bar keeps its place, so the keyboard does not jump.
+    val hasUnits = state.editor.lines.any { l ->
+        l.allRows().any { r -> r.items.any { it is Slot && it.baseUnit?.let { b -> UnitOptions.forUnit(b).size > 1 } == true } }
+    }
+    if (!hasUnits) return
+    val slot = state.editor.activeSlot
+    val base = slot?.baseUnit
+    val options = remember(base) { base?.let { UnitOptions.forUnit(it) } ?: emptyList() }
+    if (slot == null || options.size < 2) {
+        Box(Modifier.fillMaxWidth().height(BAR_HEIGHT).background(c.display))
+        return
+    }
+    val system = state.unitSystem ?: settings.units
+    val chosen = slot.unit?.symbol ?: base
+    val shown = options.filter { it.system == null || it.system == system || it.symbol == chosen || it.symbol == base }
+    val listState = rememberLazyListState()
+    LaunchedEffect(base, system) {
+        val i = shown.indexOfFirst { it.symbol == chosen }
+        if (i > 0) listState.scrollToItem(maxOf(0, i - 2))
+    }
+    Row(
+        Modifier.fillMaxWidth().height(BAR_HEIGHT).background(c.display).padding(start = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val imperial = system == UnitSystem.IMPERIAL
+        UnitChip(
+            stringResource(if (imperial) R.string.units_imperial else R.string.units_metric),
+            null, selected = false, strong = true,
+        ) { state.unitSystem = if (imperial) UnitSystem.METRIC else UnitSystem.IMPERIAL }
+        Box(Modifier.padding(horizontal = 6.dp).width(1.dp).height(22.dp).background(c.muted.copy(alpha = 0.35f)))
+        LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(end = 8.dp)) {
+            items(shown, key = { it.symbol }) { u ->
+                UnitChip(u.symbol, UnitOptions.powerHint(u.factor), selected = u.symbol == chosen) { state.setUnit(u) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnitChip(text: String, hint: String?, selected: Boolean, strong: Boolean = false, onClick: () -> Unit) {
+    val c = LocalCalcColors.current
+    val font = LocalMathFont.current
+    val shape = RoundedCornerShape(50)
+    val label = buildAnnotatedString {
+        append(mathLabel(text))
+        if (hint != null) withStyle(SpanStyle(fontSize = 0.6.em, baselineShift = BaselineShift(0.6f), color = c.muted)) { append(mathLabel(hint)) }
+    }
+    Box(
+        Modifier
+            .clip(shape)
+            .background(if (selected) c.accent.copy(alpha = 0.14f) else if (strong) c.muted.copy(alpha = 0.12f) else c.background)
+            .border(if (selected) 1.6.dp else 0.8.dp, if (selected) c.accent else c.muted.copy(alpha = 0.35f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 5.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = mathStyle(font, if (strong) 13f else 16f, if (selected) c.accent else c.text))
     }
 }
 

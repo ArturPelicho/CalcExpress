@@ -168,7 +168,7 @@ private fun App(settings: AppSettings, calc: CalcState, updater: Updater, onLang
                 area = menuArea, onArea = { menuArea = it }, calc = calc, settings = settings,
                 onBack = { screen = Screen.CALCULATOR },
                 onOpenCalculator = { screen = Screen.CALCULATOR },
-                onFormula = { f -> calc.load(f.build(settings.units)); screen = Screen.CALCULATOR },
+                onFormula = { f -> calc.load(f.rows(settings.units)); screen = Screen.CALCULATOR },
                 onConversion = { conversion = it; screen = Screen.CONVERTER },
                 onMohr = { screen = Screen.MOHR },
             )

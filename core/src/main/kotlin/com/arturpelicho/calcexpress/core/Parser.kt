@@ -61,12 +61,23 @@ class Parser private constructor(
                     SymKind.EQUALS -> throw CalcException(CalcException.Reason.SYNTAX, "=")
                 }
                 is Group -> out += Tok.Atom(parseRow(n.content))
-                is Slot -> out += Tok.Atom(
-                    if (n.content.isEmpty) {
-                        val label = n.label ?: throw CalcException(CalcException.Reason.EMPTY_CASE)
-                        filled[label]?.let { parseRow(it) } ?: Expr.Var(label)
-                    } else parseRow(n.content)
-                )
+                is Slot -> {
+                    val label = n.label
+                    val typed = when {
+                        !n.content.isEmpty -> parseRow(n.content)
+                        label == null -> throw CalcException(CalcException.Reason.EMPTY_CASE)
+                        else -> filled[label]?.let { parseRow(it) }
+                    }
+                    // A typed value in another unit (e.g. GJ for J) is scaled to the formula's unit;
+                    // an unknown box stays a plain variable, in the formula's unit.
+                    out += Tok.Atom(
+                        when {
+                            typed == null -> Expr.Var(label!!)
+                            n.factor == 1.0 -> typed
+                            else -> Expr.Bin('*', typed, Expr.Num(n.factor))
+                        }
+                    )
+                }
                 is Power -> out += Tok.Pow(parseRow(n.exponent))
                 is Fraction -> out += Tok.Atom(Expr.Bin('/', parseRow(n.numerator), parseRow(n.denominator)))
                 is Root -> out += Tok.Atom(Expr.RootE(parseRow(n.radicand), n.index?.let { parseRow(it) }))

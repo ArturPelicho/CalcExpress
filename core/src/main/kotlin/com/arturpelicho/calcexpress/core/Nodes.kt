@@ -122,9 +122,19 @@ class Derivative(
  * A "case": a box to fill in. When [label] is set (formulas) an empty slot acts as the
  * unknown named [label]; a filled slot evaluates like brackets around its content.
  */
-class Slot(val label: String? = null, val content: MathRow = MathRow()) : Node() {
+class Slot(
+    val label: String? = null,
+    val content: MathRow = MathRow(),
+    /** The formula's unit for this box (e.g. "J"), when it has one. */
+    var baseUnit: String? = null,
+    /** The unit the value is typed in, when it differs from [baseUnit]. */
+    var unit: UnitOption? = null,
+) : Node() {
     override val rows get() = listOf(content)
-    override fun deepCopy() = Slot(label, content.deepCopy())
+    override fun deepCopy() = Slot(label, content.deepCopy(), baseUnit, unit)
+
+    /** Multiplier from the typed value to the formula's unit. */
+    val factor: Double get() = unit?.factor ?: 1.0
     override fun toString() = if (content.isEmpty) "[${label ?: ""}]" else "[$content]"
 }
 

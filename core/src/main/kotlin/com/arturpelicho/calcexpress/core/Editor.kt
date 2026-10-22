@@ -37,6 +37,21 @@ class Editor {
 
     private fun changed() { version++ }
 
+    /** The formula box the caret is in, if any. */
+    val activeSlot: Slot?
+        get() = lines.asSequence().flatMap { it.allRows() }.flatMap { it.items.asSequence() }
+            .filterIsInstance<Slot>().firstOrNull { it.content === caret.row }
+
+    /** Types [slot] (and every box with the same label, which shares its value) in [unit]. */
+    fun setSlotUnit(slot: Slot, unit: UnitOption) {
+        val same = lines.asSequence().flatMap { it.allRows() }.flatMap { it.items.asSequence() }
+            .filterIsInstance<Slot>().filter { it === slot || (slot.label != null && it.label == slot.label) }
+        // The formula's own unit is stored as "no conversion".
+        val chosen = if (unit.factor == 1.0 && unit.symbol == slot.baseUnit) null else unit
+        for (s in same) s.unit = chosen
+        changed()
+    }
+
     // ---------------------------------------------------------------- tree helpers
 
     private data class Parent(val node: Node, val owner: MathRow)

@@ -13,6 +13,8 @@ sealed class Outcome {
         val values: List<Pair<String, List<Double>>>,
         /** Non-real roots (re, im) of a single polynomial equation, listed after the real ones. */
         val complex: List<Pair<Double, Double>> = emptyList(),
+        /** Unit symbol of an unknown formula box, shown after its value. */
+        val units: Map<String, String> = emptyMap(),
     ) : Outcome()
     /** Fewer equations than unknowns: the first unknowns (by priority) in terms of the rest. */
     data class Parametric(val values: List<Pair<String, Affine>>) : Outcome()
@@ -46,7 +48,7 @@ sealed class GraphSpec {
 object Analysis {
 
     fun evaluate(lines: List<MathRow>, angle: AngleUnit): Outcome = try {
-        evaluateOrThrow(lines.filter { !it.isEmpty }, angle)
+        withUnits(evaluateOrThrow(lines.filter { !it.isEmpty }, angle), lines)
     } catch (e: CalcException) {
         Outcome.Error(e.reason, e.detail)
     } catch (e: StackOverflowError) {
@@ -266,6 +268,20 @@ object Analysis {
     fun graphFor(lines: List<MathRow>, angle: AngleUnit): GraphSpec? = try {
         graphOrThrow(lines.filter { !it.isEmpty }, angle)
     } catch (e: CalcException) { null }
+
+    /** Unknown formula boxes with a unit: values are given in the unit chosen for the box. */
+    private fun withUnits(o: Outcome, lines: List<MathRow>): Outcome {
+        if (o !is Outcome.Solutions) return o
+        val filled = Parser.filledCases(lines)
+        val boxes = lines.flatMap { it.allRows() }.flatMap { it.items }.filterIsInstance<Slot>()
+            .filter { it.label != null && it.content.isEmpty && it.label !in filled && (it.unit != null || it.baseUnit != null) }
+            .associateBy { it.label!! }
+        if (boxes.isEmpty()) return o
+        return o.copy(
+            values = o.values.map { (name, vs) -> name to (boxes[name]?.let { b -> vs.map { it / b.factor } } ?: vs) },
+            units = boxes.mapValues { (_, b) -> b.unit?.symbol ?: b.baseUnit!! },
+        )
+    }
 
     private fun mohrState(m: MatrixNode, ctx: EvalContext): GraphSpec? {
         val n = m.rowCount
