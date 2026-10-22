@@ -110,5 +110,10 @@
     <string name="mohr_field_hint">Per un campo, scrivi le voci in funzione di x, y, z (es. 3x^2 − 2xy) e indica il punto.</string>
     <string name="mohr_invariants">Invarianti</string>
     <string name="mohr_by_angles">Angoli θ, φ</string>
+    <string name="mohr_el_plane">Piano θ</string>
+    <string name="mohr_el_principal">Principali</string>
+    <string name="mohr_el_shear">Taglio max.</string>
+    <string name="mohr_el_note_stress">Le frecce crescono con la tensione. Sulla faccia x, σ positivo punta a destra e τ positivo in alto; sulla faccia superiore τ punta a destra.</string>
+    <string name="mohr_el_note_strain">Deformazione esagerata per chiarezza; l’elemento originale è tratteggiato.</string>
     <string name="mohr_angles_note">θ: da x nel piano xy; φ: da z. Trascina sul diagramma per spostare il punto del piano.</string>
 </resources>

@@ -110,5 +110,10 @@
     <string name="mohr_field_hint">Für ein Feld die Einträge als Funktionen von x, y, z schreiben (z. B. 3x^2 − 2xy) und den Punkt angeben.</string>
     <string name="mohr_invariants">Invarianten</string>
     <string name="mohr_by_angles">Winkel θ, φ</string>
+    <string name="mohr_el_plane">Ebene θ</string>
+    <string name="mohr_el_principal">Haupt</string>
+    <string name="mohr_el_shear">Max. Schub</string>
+    <string name="mohr_el_note_stress">Die Pfeile wachsen mit der Spannung. Auf Fläche x zeigt positives σ nach rechts und positives τ nach oben; auf der oberen Fläche zeigt τ nach rechts.</string>
+    <string name="mohr_el_note_strain">Verformung zur Deutlichkeit überhöht; das ursprüngliche Element ist gestrichelt.</string>
     <string name="mohr_angles_note">θ: ab x in der xy-Ebene; φ: ab z. Im Diagramm ziehen, um den Punkt der Ebene zu verschieben.</string>
 </resources>
