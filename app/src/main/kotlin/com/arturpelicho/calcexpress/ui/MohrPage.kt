@@ -75,7 +75,7 @@ private fun mohrFrame(size: Size, lo: Double, hi: Double, radius: Double): MohrF
 
 private fun parseNum(s: String) = s.trim().replace(',', '.').replace('−', '-').toDoubleOrNull()
 
-private fun angleText(rad: Double, unit: AngleUnit) =
+internal fun angleText(rad: Double, unit: AngleUnit) =
     Format.number(unit.fromRadians(rad), 4) + when (unit) { AngleUnit.DEG -> "°"; AngleUnit.RAD -> " rad"; AngleUnit.GRAD -> " gon" }
 
 private fun editText(v: Double) = Format.plain(Math.round(v * 100) / 100.0)
