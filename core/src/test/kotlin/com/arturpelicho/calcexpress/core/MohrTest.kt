@@ -72,4 +72,30 @@ class MohrTest {
         assertEquals(b.normal, a.normal, 1e-9)
         assertEquals(abs(b.shear), a.shear, 1e-9)
     }
+
+    @Test fun invariantsMatchPrincipalValues() {
+        val t = Mohr.Tensor3(10.0, 4.0, -6.0, 3.0, -2.0, 5.0)
+        val (a, b, c) = Mohr.principal3D(t).values
+        val (i1, i2, i3) = t.invariants()
+        assertEquals(a + b + c, i1, 1e-9)
+        assertEquals(a * b + b * c + c * a, i2, 1e-9)
+        assertEquals(a * b * c, i3, 1e-7)
+        val m = Mohr.plane2D(80.0, -40.0, 25.0)
+        val (j1, j2) = Mohr.invariants2D(80.0, -40.0, 25.0)
+        assertEquals(m.p1 + m.p2, j1, 1e-9)
+        assertEquals(m.p1 * m.p2, j2, 1e-9)
+    }
+
+    @Test fun textExpressions() {
+        val v = mapOf("x" to 2.0, "y" to -1.0, "z" to 0.5)
+        assertEquals(12.0, TextExpr.eval("3x^2", v)!!, 1e-12)
+        assertEquals(-4.0, TextExpr.eval("2xy", v)!!, 1e-12)
+        assertEquals(13.0, TextExpr.eval("3x² - 2*x*y - 2(1+x)/3*1.5 + 0", v)!!, 1e-12)
+        assertEquals(0.002, TextExpr.eval("2e-3")!!, 1e-15)
+        assertEquals(1.0, TextExpr.eval("sin(90)", angle = AngleUnit.DEG)!!, 1e-12)
+        assertEquals(-40.0, TextExpr.eval("−40")!!, 1e-12)
+        assertEquals(null, TextExpr.eval("3x + ", v))
+        assertEquals(null, TextExpr.eval("3w", v))
+        assertEquals(setOf("x", "y"), TextExpr.variables("3x^2 + sin(y) + e + pi"))
+    }
 }

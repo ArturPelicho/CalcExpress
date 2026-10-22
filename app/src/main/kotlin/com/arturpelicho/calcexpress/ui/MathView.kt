@@ -188,7 +188,8 @@ private fun CaseBox(label: String?, size: Float, ctx: MathCtx, active: Boolean, 
     val boxH = with(density) { (size * 1.05f).sp.toPx() }
     val baseline = with(density) { (size * 0.85f).sp.toPx() }
     Layout(
-        modifier = modifier.clickable(remember { MutableInteractionSource() }, null, onClick = onTap),
+        // Read-only maths (results, formula previews) must let taps reach the parent.
+        modifier = if (ctx.editor != null) modifier.clickable(remember { MutableInteractionSource() }, null, onClick = onTap) else modifier,
         content = {
             Canvas(Modifier) {
                 val stroke = Stroke(
@@ -217,7 +218,8 @@ private fun CaseBox(label: String?, size: Float, ctx: MathCtx, active: Boolean, 
 
 @Composable
 private fun NodeView(node: Node, row: MathRow, index: Int, ctx: MathCtx, size: Float) {
-    val tap = Modifier.clickable(remember { MutableInteractionSource() }, null) { ctx.editor?.setCaret(row, index + 1) }
+    val editor = ctx.editor
+    val tap = if (editor != null) Modifier.clickable(remember { MutableInteractionSource() }, null) { editor.setCaret(row, index + 1) } else Modifier
     when (node) {
         is Sym -> SymView(node, ctx, size, tap)
         is Group -> Bracketed(bracketDepth(node.content) + 1, ctx, size) { MathRowView(node.content, ctx, size) }

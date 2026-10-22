@@ -99,6 +99,15 @@
     <string name="mohr_centre">Centro</string>
     <string name="mohr_radius">Raio</string>
     <string name="mohr_fill">Escreve um número em todos os campos.</string>
-    <string name="mohr_strain_note">γ é a distorção (de engenharia); o círculo usa γ/2.</string>
+    <string name="mohr_strain_note">γ é a distorção (de engenharia), positiva quando o ângulo reto entre x e y diminui; o círculo usa γ/2.</string>
     <string name="mohr_zero_normal">A normal não pode ser nula.</string>
+    <string name="mohr_components">Componentes x, y</string>
+    <string name="mohr_points">Pontos A e B</string>
+    <string name="mohr_points_note">A e B são os extremos de um diâmetro: duas faces perpendiculares de um elemento qualquer, não necessariamente principais. τ_B = −τ_A, e θ é medido a partir da face A.</string>
+    <string name="mohr_point">No ponto (x, y, z)</string>
+    <string name="mohr_matrix">Matriz do tensor</string>
+    <string name="mohr_matrix_note">Fora da diagonal estão as componentes do tensor ε_ij = γ_ij/2; os resultados mostram γ.</string>
+    <string name="mohr_field_hint">Para um campo, escreve as entradas em função de x, y, z (ex.: 3x^2 − 2xy) e indica o ponto.</string>
+    <string name="mohr_invariants">Invariantes</string>
+    <string name="mohr_from_face">a partir da face %1$s</string>
 </resources>
