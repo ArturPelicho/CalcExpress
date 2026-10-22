@@ -366,7 +366,7 @@ fun CalculatorScreen(state: CalcState, settings: AppSettings, modifier: Modifier
         ) {
             if (state.showGraph && graph != null) {
                 Box(Modifier.weight(1f).fillMaxWidth()) {
-                    if (graph is GraphSpec.MohrState) MohrOfMatrix(graph)
+                    if (graph is GraphSpec.MohrState) MohrOfMatrix(graph, settings.angle)
                     else GraphView(graph, Modifier.fillMaxSize())
                 }
                 Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)) {
@@ -411,13 +411,40 @@ fun CalculatorScreen(state: CalcState, settings: AppSettings, modifier: Modifier
 
 /** A symmetric matrix read as a stress state: its Mohr's circle (2D: drag to rotate the plane). */
 @Composable
-private fun MohrOfMatrix(g: GraphSpec.MohrState) {
+private fun MohrOfMatrix(g: GraphSpec.MohrState, angle: AngleUnit) {
     val t = g.tensor
-    if (g.twoD) {
-        var theta by remember(g) { mutableStateOf(0.0) }
-        MohrCanvas2D(t.xx, t.yy, t.xy, theta, "σ", "τ", false, "x" to "y", Modifier.fillMaxSize()) { theta = it }
+    val c = LocalCalcColors.current
+    // Key values at a glance: principal stresses, their direction θp and the max-shear plane θs.
+    val lines = if (g.twoD) {
+        val m = Mohr.plane2D(t.xx, t.yy, t.xy)
+        listOf(
+            "σ_1 = ${Format.number(m.p1, 5)}   σ_2 = ${Format.number(m.p2, 5)}",
+            "θ_p = ${angleText(m.thetaP, angle)}   θ_s = ${angleText(Mohr.normaliseHalfTurn(m.thetaS), angle)}",
+            "τ_max = ${Format.number(m.maxShear, 5)}",
+        )
     } else {
-        MohrCanvas3D(Mohr.principal3D(t), null, "σ", false, Modifier.fillMaxSize())
+        val p = Mohr.principal3D(t)
+        listOf(
+            p.values.mapIndexed { i, v -> "σ_${i + 1} = ${Format.number(v, 5)}" }.joinToString("   "),
+            "τ_max = ${Format.number(p.maxShear, 5)}",
+        )
+    }
+    Box(Modifier.fillMaxSize()) {
+        if (g.twoD) {
+            var theta by remember(g) { mutableStateOf(0.0) }
+            MohrCanvas2D(t.xx, t.yy, t.xy, theta, "σ", "τ", false, "x" to "y", Modifier.fillMaxSize()) { theta = it }
+        } else {
+            MohrCanvas3D(Mohr.principal3D(t), null, "σ", false, Modifier.fillMaxSize())
+        }
+        Column(
+            Modifier.align(Alignment.TopEnd).padding(6.dp)
+                .clip(RoundedCornerShape(10.dp)).background(c.display.copy(alpha = 0.88f))
+                .border(0.8.dp, c.muted.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.End,
+        ) {
+            lines.forEach { Text(mathLabel(it), style = mathStyle(LocalMathFont.current, 13f, c.accent)) }
+        }
     }
 }
 
