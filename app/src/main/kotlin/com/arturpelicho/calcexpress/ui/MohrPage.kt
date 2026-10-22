@@ -279,8 +279,13 @@ private fun BlankCanvas() {
     Spacer(Modifier.fillMaxWidth().aspectRatio(1.15f).padding(top = 8.dp).clip(RoundedCornerShape(12.dp)).background(LocalCalcColors.current.display))
 }
 
+private val CANVAS = Modifier.fillMaxWidth().aspectRatio(1.15f).padding(top = 8.dp)
+
 @Composable
-private fun MohrCanvas2D(sx: Double, sy: Double, txy: Double, theta: Double, s: String, t: String, strain: Boolean, faces: Pair<String, String>, onTheta: (Double) -> Unit) {
+internal fun MohrCanvas2D(
+    sx: Double, sy: Double, txy: Double, theta: Double, s: String, t: String, strain: Boolean, faces: Pair<String, String>,
+    modifier: Modifier = CANVAS, onTheta: (Double) -> Unit,
+) {
     val c = LocalCalcColors.current
     val m = Mohr.plane2D(sx, sy, txy)
     val lo = m.centre - m.radius; val hi = m.centre + m.radius
@@ -290,7 +295,7 @@ private fun MohrCanvas2D(sx: Double, sy: Double, txy: Double, theta: Double, s: 
         onTheta(Mohr.thetaAt(sx, sy, txy, phi))
     }
     Canvas(
-        Modifier.fillMaxWidth().aspectRatio(1.15f).padding(top = 8.dp).clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds()
+        modifier.clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds()
             .pointerInput(sx, sy, txy) {
                 detectTapGestures { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) }
             }
@@ -338,10 +343,10 @@ private fun MohrCanvas2D(sx: Double, sy: Double, txy: Double, theta: Double, s: 
 }
 
 @Composable
-private fun MohrCanvas3D(p: Mohr.Principal3D, on: Mohr.Point?, s: String, strain: Boolean) {
+internal fun MohrCanvas3D(p: Mohr.Principal3D, on: Mohr.Point?, s: String, strain: Boolean, modifier: Modifier = CANVAS) {
     val c = LocalCalcColors.current
     val (big, bigR) = p.circles[2]
-    Canvas(Modifier.fillMaxWidth().aspectRatio(1.15f).padding(top = 8.dp).clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds()) {
+    Canvas(modifier.clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds()) {
         val f = mohrFrame(size, p.values[2], p.values[0], bigR)
         drawAxes(f, c, s, if (strain) "γ/2" else "τ", shearDown = false)
         // Shade the admissible region: inside the big circle, outside the two small ones.

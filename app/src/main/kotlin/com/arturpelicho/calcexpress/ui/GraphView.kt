@@ -49,12 +49,15 @@ private fun initialViewport(spec: GraphSpec): Viewport {
         } else -10.0 to 10.0
         is GraphSpec.Area -> { val w = maxOf(abs(spec.b - spec.a), 1e-3); (minOf(spec.a, spec.b) - w * 0.3) to (maxOf(spec.a, spec.b) + w * 0.3) }
         is GraphSpec.Region -> { val w = maxOf(abs(spec.b - spec.a), 1e-3); (minOf(spec.a, spec.b) - w * 0.2) to (maxOf(spec.a, spec.b) + w * 0.2) }
+        // Drawn by the Mohr's circle view, never by this plotter.
+        is GraphSpec.MohrState -> -1.0 to 1.0
     }
     val xs = (0..200).map { x0 + (x1 - x0) * it / 200 }
     val fs = when (spec) {
         is GraphSpec.Plot -> listOf(spec.f) + spec.extra
         is GraphSpec.Area -> listOf(spec.f)
         is GraphSpec.Region -> listOf(spec.lo, spec.hi)
+        is GraphSpec.MohrState -> emptyList()
     }
     val (y0, y1) = autoY(xs, fs)
     return Viewport(x0, x1, y0, y1)
@@ -154,11 +157,13 @@ fun GraphView(spec: GraphSpec, modifier: Modifier = Modifier) {
                 drawPath(p, c.graphFill)
                 drawPath(p, c.graphLine, style = Stroke(2.dp.toPx()))
             }
+            is GraphSpec.MohrState -> {}
         }
         val label = when (spec) {
             is GraphSpec.Region -> "${spec.outer} → , ${spec.inner} ↑"
             is GraphSpec.Plot -> spec.variable
             is GraphSpec.Area -> spec.variable
+            is GraphSpec.MohrState -> ""
         }
         drawText(label, size.width - 8.dp.toPx(), size.height - 8.dp.toPx(), c.muted.toArgb(), 13.dp.toPx(), alignRight = true)
     }
