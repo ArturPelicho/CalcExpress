@@ -5,6 +5,7 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -88,6 +89,27 @@ object Mohr {
         val (vals, vecs) = jacobi(t.matrix())
         val order = vals.indices.sortedByDescending { vals[it] }
         return Principal3D(order.map { vals[it] }, order.map { k -> DoubleArray(3) { vecs[it][k] } })
+    }
+
+    /**
+     * A unit normal (global axes) whose point on the 3D diagram is (sn, tn), or the nearest
+     * admissible one when (sn, tn) lies outside the region between the circles.
+     */
+    fun normalFor(p: Principal3D, sn: Double, tn: Double): DoubleArray {
+        val (s1, s2raw, s3raw) = p.values
+        // Keep the principal values apart so the closed form below stays defined.
+        val gap = 1e-9 * (abs(s1) + abs(s2raw) + abs(s3raw) + 1e-300)
+        val s2 = min(s2raw, s1 - gap)
+        val s3 = min(s3raw, s2 - gap)
+        val t2 = tn * tn
+        val sq = doubleArrayOf(
+            (t2 + (sn - s2) * (sn - s3)) / ((s1 - s2) * (s1 - s3)),
+            (t2 + (sn - s3) * (sn - s1)) / ((s2 - s3) * (s2 - s1)),
+            (t2 + (sn - s1) * (sn - s2)) / ((s3 - s1) * (s3 - s2)),
+        ).map { max(0.0, it) }
+        val sum = sq.sum().takeIf { it > 0 } ?: 1.0
+        val c = sq.map { sqrt(it / sum) }
+        return DoubleArray(3) { i -> (0 until 3).sumOf { k -> c[k] * p.directions[k][i] } }
     }
 
     /** Normal and shear magnitude on the plane with normal [n] (any length, not zero). */

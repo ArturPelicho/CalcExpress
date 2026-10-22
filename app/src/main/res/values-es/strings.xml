@@ -93,8 +93,8 @@
     <string name="mohr_strain">Deformaciones</string>
     <string name="mohr_by_angle">Ángulo θ</string>
     <string name="mohr_by_normal">Normal n</string>
-    <string name="mohr_hint_2d">Arrastra alrededor del círculo para girar el plano. El cortante positivo se dibuja hacia abajo, así que el punto gira como el elemento.</string>
-    <string name="mohr_hint_3d">El punto del plano siempre está en la zona sombreada entre los tres círculos.</string>
+    <string name="mohr_hint_2d">Arrastra alrededor del círculo, o tócalo, para girar el plano. Elige si el cortante positivo se dibuja hacia arriba o hacia abajo.</string>
+    <string name="mohr_hint_3d">El punto del plano siempre está en la zona sombreada entre los tres círculos. Arrástralo para elegir el plano.</string>
     <string name="mohr_principal">Valores principales</string>
     <string name="mohr_directions">Direcciones principales</string>
     <string name="mohr_on_plane">En el plano</string>
@@ -103,13 +103,12 @@
     <string name="mohr_fill">Escribe un número en cada campo.</string>
     <string name="mohr_strain_note">γ es la distorsión angular, positiva cuando el ángulo recto entre x e y disminuye; el círculo usa γ/2.</string>
     <string name="mohr_zero_normal">La normal no puede ser nula.</string>
-    <string name="mohr_components">Componentes x, y</string>
-    <string name="mohr_points">Puntos A y B</string>
-    <string name="mohr_points_note">A y B son los extremos de un diámetro: dos caras perpendiculares de un elemento cualquiera, no necesariamente principales. τ_B = −τ_A, y θ se mide desde la cara A.</string>
+    <string name="mohr_points_note">x e y pueden ser dos caras perpendiculares cualesquiera, como los puntos A y B en los extremos de un diámetro; θ se mide desde x.</string>
     <string name="mohr_point">En el punto (x, y, z)</string>
     <string name="mohr_matrix">Matriz del tensor</string>
     <string name="mohr_matrix_note">Fuera de la diagonal están las componentes del tensor ε_ij = γ_ij/2; los resultados muestran γ.</string>
     <string name="mohr_field_hint">Para un campo, escribe las entradas en función de x, y, z (p. ej. 3x^2 − 2xy) e indica el punto.</string>
     <string name="mohr_invariants">Invariantes</string>
-    <string name="mohr_from_face">desde la cara %1$s</string>
+    <string name="mohr_by_angles">Ángulos θ, φ</string>
+    <string name="mohr_angles_note">θ: desde x en el plano xy; φ: desde z. Arrastra en el diagrama para mover el punto del plano.</string>
 </resources>
