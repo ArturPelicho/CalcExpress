@@ -110,5 +110,10 @@
     <string name="mohr_field_hint">Para um campo, escreve as entradas em função de x, y, z (ex.: 3x^2 − 2xy) e indica o ponto.</string>
     <string name="mohr_invariants">Invariantes</string>
     <string name="mohr_by_angles">Ângulos θ, φ</string>
+    <string name="mohr_el_plane">Plano θ</string>
+    <string name="mohr_el_principal">Principais</string>
+    <string name="mohr_el_shear">Corte máximo</string>
+    <string name="mohr_el_note_stress">As setas crescem com a tensão. Na face x, σ positivo aponta para a direita e τ positivo para cima; na face superior τ aponta para a direita.</string>
+    <string name="mohr_el_note_strain">Deformação exagerada para se ver bem; o elemento original está a tracejado.</string>
     <string name="mohr_angles_note">θ: a partir de x no plano xy; φ: a partir de z. Arrasta no diagrama para mover o ponto do plano.</string>
 </resources>

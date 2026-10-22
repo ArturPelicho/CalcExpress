@@ -110,5 +110,10 @@
     <string name="mohr_field_hint">Para un campo, escribe las entradas en función de x, y, z (p. ej. 3x^2 − 2xy) e indica el punto.</string>
     <string name="mohr_invariants">Invariantes</string>
     <string name="mohr_by_angles">Ángulos θ, φ</string>
+    <string name="mohr_el_plane">Plano θ</string>
+    <string name="mohr_el_principal">Principales</string>
+    <string name="mohr_el_shear">Cortante máx.</string>
+    <string name="mohr_el_note_stress">Las flechas crecen con la tensión. En la cara x, σ positivo apunta a la derecha y τ positivo hacia arriba; en la cara superior τ apunta a la derecha.</string>
+    <string name="mohr_el_note_strain">Deformación exagerada para que se vea; el elemento original está discontinuo.</string>
     <string name="mohr_angles_note">θ: desde x en el plano xy; φ: desde z. Arrastra en el diagrama para mover el punto del plano.</string>
 </resources>

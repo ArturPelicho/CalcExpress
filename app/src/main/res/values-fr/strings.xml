@@ -110,5 +110,10 @@
     <string name="mohr_field_hint">Pour un champ, écrivez les entrées en fonction de x, y, z (ex. 3x^2 − 2xy) et donnez le point.</string>
     <string name="mohr_invariants">Invariants</string>
     <string name="mohr_by_angles">Angles θ, φ</string>
+    <string name="mohr_el_plane">Plan θ</string>
+    <string name="mohr_el_principal">Principales</string>
+    <string name="mohr_el_shear">Cisaillement max.</string>
+    <string name="mohr_el_note_stress">Les flèches grandissent avec la contrainte. Sur la face x, σ positif pointe à droite et τ positif vers le haut ; sur la face supérieure τ pointe à droite.</string>
+    <string name="mohr_el_note_strain">Déformation exagérée pour la lisibilité ; l’élément initial est en pointillés.</string>
     <string name="mohr_angles_note">θ : depuis x dans le plan xy ; φ : depuis z. Faites glisser sur le diagramme pour déplacer le point du plan.</string>
 </resources>
