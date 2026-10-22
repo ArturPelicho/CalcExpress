@@ -93,8 +93,8 @@
     <string name="mohr_strain">Déformations</string>
     <string name="mohr_by_angle">Angle θ</string>
     <string name="mohr_by_normal">Normale n</string>
-    <string name="mohr_hint_2d">Faites glisser autour du cercle pour tourner le plan. Le cisaillement positif est tracé vers le bas : le point tourne dans le même sens que l’élément.</string>
-    <string name="mohr_hint_3d">Le point du plan se trouve toujours dans la zone grisée entre les trois cercles.</string>
+    <string name="mohr_hint_2d">Faites glisser autour du cercle, ou touchez-le, pour tourner le plan. Choisissez si le cisaillement positif est tracé vers le haut ou vers le bas.</string>
+    <string name="mohr_hint_3d">Le point du plan se trouve toujours dans la zone grisée entre les trois cercles. Faites-le glisser pour choisir le plan.</string>
     <string name="mohr_principal">Valeurs principales</string>
     <string name="mohr_directions">Directions principales</string>
     <string name="mohr_on_plane">Sur le plan</string>
@@ -103,13 +103,12 @@
     <string name="mohr_fill">Saisissez un nombre dans chaque champ.</string>
     <string name="mohr_strain_note">γ est la distorsion angulaire, positive quand l’angle droit entre x et y diminue ; le cercle utilise γ/2.</string>
     <string name="mohr_zero_normal">La normale ne peut pas être nulle.</string>
-    <string name="mohr_components">Composantes x, y</string>
-    <string name="mohr_points">Points A et B</string>
-    <string name="mohr_points_note">A et B sont les extrémités d’un diamètre : deux faces perpendiculaires d’un élément quelconque, pas forcément principales. τ_B = −τ_A, et θ est mesuré depuis la face A.</string>
+    <string name="mohr_points_note">x et y peuvent être deux faces perpendiculaires quelconques, comme les points A et B aux extrémités d’un diamètre ; θ est mesuré depuis x.</string>
     <string name="mohr_point">Au point (x, y, z)</string>
     <string name="mohr_matrix">Matrice du tenseur</string>
     <string name="mohr_matrix_note">Hors diagonale : composantes du tenseur ε_ij = γ_ij/2 ; les résultats donnent γ.</string>
     <string name="mohr_field_hint">Pour un champ, écrivez les entrées en fonction de x, y, z (ex. 3x^2 − 2xy) et donnez le point.</string>
     <string name="mohr_invariants">Invariants</string>
-    <string name="mohr_from_face">depuis la face %1$s</string>
+    <string name="mohr_by_angles">Angles θ, φ</string>
+    <string name="mohr_angles_note">θ : depuis x dans le plan xy ; φ : depuis z. Faites glisser sur le diagramme pour déplacer le point du plan.</string>
 </resources>

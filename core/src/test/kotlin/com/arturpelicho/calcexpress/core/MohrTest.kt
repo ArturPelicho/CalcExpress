@@ -110,4 +110,18 @@ class MohrTest {
         val g3 = Analysis.graphFor(listOf(three), AngleUnit.RAD) as GraphSpec.MohrState
         assertEquals(Mohr.Tensor3(1.0, 5.0, 9.0, 2.0, 6.0, 3.0), g3.tensor)
     }
+
+    @Test fun normalForInvertsThePlanePoint() {
+        val t = Mohr.Tensor3(10.0, 4.0, -6.0, 3.0, -2.0, 5.0)
+        val p = Mohr.principal3D(t)
+        for (n in listOf(doubleArrayOf(1.0, 1.0, 1.0), doubleArrayOf(1.0, -2.0, 0.5), doubleArrayOf(0.3, 0.0, 1.0))) {
+            val on = Mohr.onPlane3D(t, n)!!
+            val back = Mohr.onPlane3D(t, Mohr.normalFor(p, on.normal, on.shear))!!
+            assertEquals(on.normal, back.normal, 1e-6)
+            assertEquals(on.shear, back.shear, 1e-6)
+        }
+        // Outside the big circle: still a valid unit normal.
+        val far = Mohr.normalFor(p, 100.0, 100.0)
+        assertEquals(1.0, sqrt(far.sumOf { it * it }), 1e-9)
+    }
 }

@@ -93,8 +93,8 @@
     <string name="mohr_strain">Deformazioni</string>
     <string name="mohr_by_angle">Angolo θ</string>
     <string name="mohr_by_normal">Normale n</string>
-    <string name="mohr_hint_2d">Trascina attorno al cerchio per ruotare il piano. Il taglio positivo è disegnato verso il basso, quindi il punto ruota come l’elemento.</string>
-    <string name="mohr_hint_3d">Il punto del piano si trova sempre nella zona ombreggiata tra i tre cerchi.</string>
+    <string name="mohr_hint_2d">Trascina attorno al cerchio, o toccalo, per ruotare il piano. Scegli se il taglio positivo va disegnato in alto o in basso.</string>
+    <string name="mohr_hint_3d">Il punto del piano si trova sempre nella zona ombreggiata tra i tre cerchi. Trascinalo per scegliere il piano.</string>
     <string name="mohr_principal">Valori principali</string>
     <string name="mohr_directions">Direzioni principali</string>
     <string name="mohr_on_plane">Sul piano</string>
@@ -103,13 +103,12 @@
     <string name="mohr_fill">Inserisci un numero in ogni campo.</string>
     <string name="mohr_strain_note">γ è lo scorrimento angolare, positivo quando l’angolo retto tra x e y diminuisce; il cerchio usa γ/2.</string>
     <string name="mohr_zero_normal">La normale non può essere nulla.</string>
-    <string name="mohr_components">Componenti x, y</string>
-    <string name="mohr_points">Punti A e B</string>
-    <string name="mohr_points_note">A e B sono gli estremi di un diametro: due facce perpendicolari di un elemento qualsiasi, non necessariamente principali. τ_B = −τ_A, e θ si misura dalla faccia A.</string>
+    <string name="mohr_points_note">x e y possono essere due facce perpendicolari qualsiasi, come i punti A e B agli estremi di un diametro; θ si misura da x.</string>
     <string name="mohr_point">Nel punto (x, y, z)</string>
     <string name="mohr_matrix">Matrice del tensore</string>
     <string name="mohr_matrix_note">Fuori diagonale ci sono le componenti del tensore ε_ij = γ_ij/2; i risultati mostrano γ.</string>
     <string name="mohr_field_hint">Per un campo, scrivi le voci in funzione di x, y, z (es. 3x^2 − 2xy) e indica il punto.</string>
     <string name="mohr_invariants">Invarianti</string>
-    <string name="mohr_from_face">dalla faccia %1$s</string>
+    <string name="mohr_by_angles">Angoli θ, φ</string>
+    <string name="mohr_angles_note">θ: da x nel piano xy; φ: da z. Trascina sul diagramma per spostare il punto del piano.</string>
 </resources>

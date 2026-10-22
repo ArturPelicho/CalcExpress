@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -75,6 +76,8 @@ private fun angleText(rad: Double, unit: AngleUnit) =
 
 private fun editText(v: Double) = Format.plain(Math.round(v * 100) / 100.0)
 
+private fun editText3(v: Double) = Format.plain(Math.round(v * 1000) / 1000.0)
+
 @Composable
 fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
     val c = LocalCalcColors.current
@@ -94,7 +97,11 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
     val ny = rememberSaveable { mutableStateOf("1") }
     val nz = rememberSaveable { mutableStateOf("1") }
 
-    var byPoints by rememberSaveable { mutableStateOf(false) }
+    var shearDown by rememberSaveable { mutableStateOf(false) }
+    // 3D plane: by normal components or by spherical angles (θ from x in the xy-plane, φ from z).
+    var byAngles3 by rememberSaveable { mutableStateOf(false) }
+    val az = rememberSaveable { mutableStateOf(editText(unit.fromRadians(Math.PI / 4))) }
+    val polar = rememberSaveable { mutableStateOf(editText(unit.fromRadians(Math.acos(1 / Math.sqrt(3.0))))) }
     // Point where a stress/strain field (entries in x, y, z) is evaluated.
     val px = rememberSaveable { mutableStateOf("0") }
     val py = rememberSaveable { mutableStateOf("0") }
@@ -131,21 +138,21 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                     val a = parseNum(nx.value); val b = parseNum(ny.value)
                     if (a != null && b != null && (a != 0.0 || b != 0.0)) atan2(b, a) else null
                 } else parseNum(theta.value)?.let { unit.toRadians(it) }
-                val faces = if (byPoints) "A" to "B" else "x" to "y"
+                val faces = "x" to "y"
                 if (vxx != null && vyy != null && vxy != null) {
-                    MohrCanvas2D(vxx, vyy, vxy, th ?: 0.0, s, t, strain, faces) { newTheta ->
+                    MohrCanvas2D(vxx, vyy, vxy, th ?: 0.0, s, t, strain, faces, shearDown = shearDown) { newTheta ->
                         theta.value = editText(unit.fromRadians(newTheta))
-                        nx.value = editText(cos(newTheta)); ny.value = editText(sin(newTheta))
+                        nx.value = editText3(cos(newTheta)); ny.value = editText3(sin(newTheta))
                     }
                 } else BlankCanvas()
-                Text(stringResource(R.string.mohr_hint_2d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(!byPoints, { byPoints = false }, { Text(stringResource(R.string.mohr_components)) })
-                    FilterChip(byPoints, { byPoints = true }, { Text(stringResource(R.string.mohr_points)) })
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
+                    val shearName = if (strain) "γ/2" else "τ"
+                    FilterChip(!shearDown, { shearDown = false }, { Text("$shearName ↑") })
+                    FilterChip(shearDown, { shearDown = true }, { Text("$shearName ↓") })
                 }
-                if (byPoints) FieldRow(listOf(xx to "${s}_A", xy to "${t}_A", yy to "${s}_B"), text = true)
-                else FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", xy to "${t}_xy"), text = true)
-                if (byPoints) Note(stringResource(R.string.mohr_points_note))
+                Text(stringResource(R.string.mohr_hint_2d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 4.dp))
+                FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", xy to "${t}_xy"), text = true)
+                Note(stringResource(R.string.mohr_points_note))
                 PointRow(fieldVars, threeD = false, px, py, pz)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
                     FilterChip(!byNormal, { byNormal = false }, { Text(stringResource(R.string.mohr_by_angle)) })
@@ -156,15 +163,25 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 if (strain) Note(stringResource(R.string.mohr_strain_note))
                 Note(stringResource(R.string.mohr_field_hint))
                 if (vxx == null || vyy == null || vxy == null || th == null) Note(stringResource(R.string.mohr_fill))
-                else Results2D(vxx, vyy, vxy, th, s, t, strain, unit, faces.first)
+                else Results2D(vxx, vyy, vxy, th, s, t, strain, unit)
             } else {
-                val n = listOf(nx, ny, nz).map { parseNum(it.value) }
+                val n = if (byAngles3) {
+                    val a = parseNum(az.value)?.let { unit.toRadians(it) }
+                    val b = parseNum(polar.value)?.let { unit.toRadians(it) }
+                    if (a != null && b != null) listOf(sin(b) * cos(a), sin(b) * sin(a), cos(b)) else listOf(null, null, null)
+                } else listOf(nx, ny, nz).map { parseNum(it.value) }
                 val ten = if (listOf(vxx, vyy, vzz, vxy, vyz, vxz).all { it != null })
                     Mohr.Tensor3(vxx!!, vyy!!, vzz!!, vxy!!, vyz!!, vxz!!) else null
                 val normal = if (n.all { it != null }) DoubleArray(3) { n[it]!! } else null
                 val p = ten?.let { Mohr.principal3D(it) }
                 val onPlane = if (ten != null && normal != null) Mohr.onPlane3D(ten, normal) else null
-                if (p != null) MohrCanvas3D(p, onPlane, s, strain) else BlankCanvas()
+                if (p != null) MohrCanvas3D(p, onPlane, s, strain) { sn, tn ->
+                    // Dragging moves the plane's point: find a normal that lands there.
+                    val u = Mohr.normalFor(p, sn, tn)
+                    nx.value = editText3(u[0]); ny.value = editText3(u[1]); nz.value = editText3(u[2])
+                    az.value = editText(unit.fromRadians(atan2(u[1], u[0])))
+                    polar.value = editText(unit.fromRadians(Math.acos(u[2].coerceIn(-1.0, 1.0))))
+                } else BlankCanvas()
                 Text(stringResource(R.string.mohr_hint_3d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp))
                 // The symmetric matrix: mirrored cells share their state, so editing either keeps it symmetric.
                 Text(stringResource(R.string.mohr_matrix), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
@@ -172,8 +189,14 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 FieldRow(listOf(xy to "${t}_yx", yy to "${s}_y", yz to "${t}_yz"), text = true)
                 FieldRow(listOf(xz to "${t}_zx", yz to "${t}_zy", zz to "${s}_z"), text = true)
                 PointRow(fieldVars, threeD = true, px, py, pz)
-                Text(stringResource(R.string.mohr_by_normal), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
-                FieldRow(listOf(nx to "n_x", ny to "n_y", nz to "n_z"))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    FilterChip(!byAngles3, { byAngles3 = false }, { Text(stringResource(R.string.mohr_by_normal)) })
+                    FilterChip(byAngles3, { byAngles3 = true }, { Text(stringResource(R.string.mohr_by_angles)) })
+                }
+                if (byAngles3) {
+                    FieldRow(listOf(az to "θ (${unit.label})", polar to "φ (${unit.label})"))
+                    Note(stringResource(R.string.mohr_angles_note))
+                } else FieldRow(listOf(nx to "n_x", ny to "n_y", nz to "n_z"))
                 if (strain) Note(stringResource(R.string.mohr_matrix_note))
                 Note(stringResource(R.string.mohr_field_hint))
                 if (p != null && ten != null && normal != null) Results3D(p, ten, onPlane, s, t, strain)
@@ -232,7 +255,7 @@ private fun ResultLine(text: String) {
 private fun n(v: Double) = Format.number(v, 6)
 
 @Composable
-private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String, t: String, strain: Boolean, unit: AngleUnit, from: String) {
+private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String, t: String, strain: Boolean, unit: AngleUnit) {
     val m = Mohr.plane2D(sx, sy, txy)
     val p = Mohr.rotate2D(sx, sy, txy, th)
     val k = if (strain) 2.0 else 1.0
@@ -244,7 +267,7 @@ private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String
     val (i1, i2) = Mohr.invariants2D(sx, sy, txy)
     ResultTitle(stringResource(R.string.mohr_invariants))
     ResultLine("I_1 = ${n(i1)}    I_2 = ${n(i2)}")
-    ResultTitle(stringResource(R.string.mohr_on_plane) + " θ = " + angleText(th, unit) + " (${stringResource(R.string.mohr_from_face, from)})")
+    ResultTitle(stringResource(R.string.mohr_on_plane) + " θ = " + angleText(th, unit))
     ResultLine("${s}_θ = ${n(p.normal)}    ${t}_θ = ${n(k * p.shear)}")
     // The perpendicular face completes the rotated element.
     val q = Mohr.rotate2D(sx, sy, txy, th + Math.PI / 2)
@@ -281,25 +304,31 @@ private fun BlankCanvas() {
 
 private val CANVAS = Modifier.fillMaxWidth().aspectRatio(1.15f).padding(top = 8.dp)
 
+/** Short number for labels on the diagram. */
+private fun short(v: Double) = Format.number(if (abs(v) < 1e-12) 0.0 else v, 4)
+
 @Composable
 internal fun MohrCanvas2D(
     sx: Double, sy: Double, txy: Double, theta: Double, s: String, t: String, strain: Boolean, faces: Pair<String, String>,
-    modifier: Modifier = CANVAS, onTheta: (Double) -> Unit,
+    modifier: Modifier = CANVAS, shearDown: Boolean = false, onTheta: (Double) -> Unit,
 ) {
     val c = LocalCalcColors.current
     val m = Mohr.plane2D(sx, sy, txy)
     val lo = m.centre - m.radius; val hi = m.centre + m.radius
+    // Positive shear is drawn up (sg = 1) or down (sg = −1).
+    val sg = if (shearDown) -1.0 else 1.0
     fun pick(size: Size, pos: Offset) {
         val f = mohrFrame(size, lo, hi, m.radius)
-        val phi = atan2((f.oy - pos.y).toDouble(), (pos.x - f.x(m.centre)).toDouble())
-        onTheta(Mohr.thetaAt(sx, sy, txy, phi))
+        val phiUp = atan2((f.oy - pos.y).toDouble(), (pos.x - f.x(m.centre)).toDouble())
+        // thetaAt works in the "shear down" picture; mirror the angle when shear is drawn up.
+        onTheta(Mohr.thetaAt(sx, sy, txy, if (shearDown) phiUp else -phiUp))
     }
     Canvas(
         modifier.clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds()
-            .pointerInput(sx, sy, txy) {
+            .pointerInput(sx, sy, txy, shearDown) {
                 detectTapGestures { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) }
             }
-            .pointerInput(sx, sy, txy) {
+            .pointerInput(sx, sy, txy, shearDown) {
                 detectDragGestures(onDragStart = { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) }) { change, _ ->
                     change.consume()
                     pick(Size(size.width.toFloat(), size.height.toFloat()), change.position)
@@ -309,80 +338,134 @@ internal fun MohrCanvas2D(
         val f = mohrFrame(size, lo, hi, m.radius)
         val r = (m.radius * f.k).toFloat()
         val centre = Offset(f.x(m.centre), f.oy)
-        drawAxes(f, c, s, if (strain) "γ/2" else t, shearDown = true)
+        fun at(normal: Double, shear: Double) = Offset(f.x(normal), f.y(sg * shear))
+        drawScale(f, c, sg)
         drawCircle(c.graphFill, r, centre)
+        drawAxes(f, c, s, if (strain) "γ/2" else t, shearDown)
         drawCircle(c.graphLine, r, centre, style = Stroke(2.dp.toPx()))
-        // Faces x (θ = 0) and y (θ = 90°): shear drawn positive downwards.
-        val px = Offset(f.x(sx), f.y(-txy)); val py = Offset(f.x(sy), f.y(txy))
+        // Faces x (θ = 0) and y (θ = 90°).
+        val px = at(sx, txy); val py = at(sy, -txy)
         drawLine(c.muted, px, py, 1.2.dp.toPx())
         drawCircle(c.muted, 4.dp.toPx(), px); drawCircle(c.muted, 4.dp.toPx(), py)
-        label(faces.first, px + Offset(6.dp.toPx(), -6.dp.toPx()), c.muted)
-        label(faces.second, py + Offset(6.dp.toPx(), -6.dp.toPx()), c.muted)
+        tag("${faces.first} (${short(sx)}, ${short(txy)})", px, centre, c, c.muted)
+        tag("${faces.second} (${short(sy)}, ${short(-txy)})", py, centre, c, c.muted)
         // Principal values on the axis.
         val p1 = Offset(f.x(m.p1), f.oy); val p2 = Offset(f.x(m.p2), f.oy)
         drawCircle(c.accent, 4.dp.toPx(), p1); drawCircle(c.accent, 4.dp.toPx(), p2)
-        label("${s}₁", p1 + Offset(4.dp.toPx(), 16.dp.toPx()), c.accent)
-        label("${s}₂", p2 + Offset(-18.dp.toPx(), 16.dp.toPx()), c.accent)
-        // The chosen plane and its 2θ arc from face x.
+        tag("${s}₁ = ${short(m.p1)}", p1, centre, c, c.accent, below = true)
+        tag("${s}₂ = ${short(m.p2)}", p2, centre, c, c.accent, below = true)
+        // The chosen plane, its opposite face and the 2θ arc from face x.
         val q = Mohr.rotate2D(sx, sy, txy, theta)
-        val pq = Offset(f.x(q.normal), f.y(-q.shear))
+        val pq = at(q.normal, q.shear)
         val opp = Offset(2 * centre.x - pq.x, 2 * centre.y - pq.y)
         drawLine(c.highlight, opp, pq, 2.dp.toPx())
         if (r > 8.dp.toPx()) {
-            val alpha = Math.toDegrees(atan2(txy, (sx - sy) / 2)).toFloat()
+            val start = -Math.toDegrees(atan2(sg * txy, (sx - sy) / 2)).toFloat()
             val ar = r * 0.3f
             drawArc(
-                c.highlight, startAngle = alpha, sweepAngle = -Math.toDegrees(2 * theta).toFloat(), useCenter = false,
+                c.highlight, startAngle = start, sweepAngle = (sg * Math.toDegrees(2 * theta)).toFloat(), useCenter = false,
                 topLeft = Offset(centre.x - ar, centre.y - ar), size = Size(2 * ar, 2 * ar), style = Stroke(1.5.dp.toPx()),
             )
         }
         drawCircle(c.highlight, 6.dp.toPx(), pq)
-        label("θ", pq + Offset(8.dp.toPx(), -8.dp.toPx()), c.highlight)
+        drawCircle(c.display, 2.5.dp.toPx(), pq)
+        tag("θ (${short(q.normal)}, ${short(q.shear)})", pq, centre, c, c.highlight, strong = true)
         drawElement(theta, c)
     }
 }
 
 @Composable
-internal fun MohrCanvas3D(p: Mohr.Principal3D, on: Mohr.Point?, s: String, strain: Boolean, modifier: Modifier = CANVAS) {
+internal fun MohrCanvas3D(
+    p: Mohr.Principal3D, on: Mohr.Point?, s: String, strain: Boolean, modifier: Modifier = CANVAS,
+    onPick: ((Double, Double) -> Unit)? = null,
+) {
     val c = LocalCalcColors.current
     val (big, bigR) = p.circles[2]
-    Canvas(modifier.clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds()) {
+    fun pick(size: Size, pos: Offset) {
         val f = mohrFrame(size, p.values[2], p.values[0], bigR)
-        drawAxes(f, c, s, if (strain) "γ/2" else "τ", shearDown = false)
+        onPick?.invoke((pos.x - f.ox) / f.k.toDouble(), abs((f.oy - pos.y) / f.k.toDouble()))
+    }
+    val gestures = if (onPick == null) Modifier else Modifier
+        .pointerInput(p) { detectTapGestures { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) } }
+        .pointerInput(p) {
+            detectDragGestures(onDragStart = { pos -> pick(Size(size.width.toFloat(), size.height.toFloat()), pos) }) { change, _ ->
+                change.consume()
+                pick(Size(size.width.toFloat(), size.height.toFloat()), change.position)
+            }
+        }
+    Canvas(modifier.clip(RoundedCornerShape(12.dp)).background(c.display).clipToBounds().then(gestures)) {
+        val f = mohrFrame(size, p.values[2], p.values[0], bigR)
+        val centre = Offset(f.x(big), f.oy)
+        drawScale(f, c, 1.0)
         // Shade the admissible region: inside the big circle, outside the two small ones.
-        drawCircle(c.graphFill, (bigR * f.k).toFloat(), Offset(f.x(big), f.oy))
+        drawCircle(c.graphFill, (bigR * f.k).toFloat(), centre)
         for ((cc, rr) in p.circles.take(2)) drawCircle(c.display, (rr * f.k).toFloat(), Offset(f.x(cc), f.oy))
-        drawAxesLine(f, c)
+        // Axes after the fills, so the circles never hide them.
+        drawAxes(f, c, s, if (strain) "γ/2" else "τ", shearDown = false)
         for ((cc, rr) in p.circles) drawCircle(c.graphLine, (rr * f.k).toFloat(), Offset(f.x(cc), f.oy), style = Stroke(2.dp.toPx()))
         p.values.forEachIndexed { i, v ->
             val o = Offset(f.x(v), f.oy)
             drawCircle(c.accent, 4.dp.toPx(), o)
-            label("$s${"₁₂₃"[i]}", o + Offset(4.dp.toPx(), 16.dp.toPx()), c.accent)
+            tag("$s${"₁₂₃"[i]} = ${short(v)}", o, centre, c, c.accent, below = true, stagger = i == 1)
         }
         if (on != null) {
             val o = Offset(f.x(on.normal), f.y(on.shear))
             drawCircle(c.highlight, 6.dp.toPx(), o)
-            label("n", o + Offset(8.dp.toPx(), -8.dp.toPx()), c.highlight)
+            drawCircle(c.display, 2.5.dp.toPx(), o)
+            tag("n (${short(on.normal)}, ${short(on.shear)})", o, centre, c, c.highlight, strong = true)
         }
     }
 }
 
-private fun DrawScope.drawAxesLine(f: MohrFrame, c: CalcColors) {
-    drawLine(c.muted.copy(alpha = 0.7f), Offset(0f, f.oy), Offset(size.width, f.oy), 1.dp.toPx())
+private fun niceStep(range: Double): Double {
+    if (range <= 0 || !range.isFinite()) return 1.0
+    val raw = range / 6
+    val mag = Math.pow(10.0, Math.floor(Math.log10(raw)))
+    val n = raw / mag
+    return mag * when { n < 1.5 -> 1.0; n < 3.5 -> 2.0; n < 7.5 -> 5.0; else -> 10.0 }
+}
+
+/** Light grid with numbered ticks on both axes; shear labels follow the drawing direction [sg]. */
+private fun DrawScope.drawScale(f: MohrFrame, c: CalcColors, sg: Double) {
+    val grid = c.muted.copy(alpha = 0.14f)
+    val x0 = -f.ox / f.k.toDouble(); val x1 = (size.width - f.ox) / f.k.toDouble()
+    val step = niceStep(x1 - x0)
+    val axisY = f.oy
+    val zeroX = f.x(0.0).coerceIn(0f, size.width)
+    var v = Math.floor(x0 / step) * step
+    while (v <= x1) {
+        val x = f.x(v)
+        drawLine(grid, Offset(x, 0f), Offset(x, size.height))
+        if (abs(v) > step / 2) small(short(v), Offset(x, axisY + 13.dp.toPx()), c.muted, center = true)
+        v += step
+    }
+    val y0 = (f.oy - size.height) / f.k.toDouble(); val y1 = f.oy / f.k.toDouble()
+    var u = Math.floor(y0 / step) * step
+    while (u <= y1) {
+        val y = f.y(u)
+        drawLine(grid, Offset(0f, y), Offset(size.width, y))
+        if (abs(u) > step / 2) small(short(sg * u), Offset(zeroX + 4.dp.toPx(), y - 2.dp.toPx()), c.muted)
+        u += step
+    }
 }
 
 private fun DrawScope.drawAxes(f: MohrFrame, c: CalcColors, s: String, t: String, shearDown: Boolean) {
-    drawAxesLine(f, c)
-    label(s, Offset(size.width - 18.dp.toPx(), f.oy - 6.dp.toPx()), c.muted)
+    val axis = c.muted.copy(alpha = 0.85f)
+    drawLine(axis, Offset(0f, f.oy), Offset(size.width, f.oy), 1.2.dp.toPx())
+    // σ arrow at the right end.
+    val end = size.width - 3.dp.toPx()
+    drawLine(axis, Offset(end, f.oy), Offset(end - 7.dp.toPx(), f.oy - 4.dp.toPx()), 1.2.dp.toPx())
+    drawLine(axis, Offset(end, f.oy), Offset(end - 7.dp.toPx(), f.oy + 4.dp.toPx()), 1.2.dp.toPx())
+    label(s, Offset(size.width - 16.dp.toPx(), f.oy - 8.dp.toPx()), c.muted)
     val x0 = f.x(0.0)
     if (x0 in 0f..size.width) {
-        drawLine(c.muted.copy(alpha = 0.7f), Offset(x0, 0f), Offset(x0, size.height), 1.dp.toPx())
+        drawLine(axis, Offset(x0, 0f), Offset(x0, size.height), 1.2.dp.toPx())
         // Arrow on the positive shear direction.
-        val tip = if (shearDown) size.height - 4.dp.toPx() else 4.dp.toPx()
-        val back = if (shearDown) -8.dp.toPx() else 8.dp.toPx()
-        drawLine(c.muted, Offset(x0, tip), Offset(x0 - 5.dp.toPx(), tip + back), 1.dp.toPx())
-        drawLine(c.muted, Offset(x0, tip), Offset(x0 + 5.dp.toPx(), tip + back), 1.dp.toPx())
-        label(t, Offset(x0 + 8.dp.toPx(), if (shearDown) size.height - 8.dp.toPx() else 18.dp.toPx()), c.muted)
+        val tip = if (shearDown) size.height - 3.dp.toPx() else 3.dp.toPx()
+        val back = if (shearDown) -7.dp.toPx() else 7.dp.toPx()
+        drawLine(axis, Offset(x0, tip), Offset(x0 - 4.dp.toPx(), tip + back), 1.2.dp.toPx())
+        drawLine(axis, Offset(x0, tip), Offset(x0 + 4.dp.toPx(), tip + back), 1.2.dp.toPx())
+        label(t, Offset(x0 - 8.dp.toPx() - textWidth(t, 14.dp.toPx()), if (shearDown) size.height - 8.dp.toPx() else 18.dp.toPx()), c.muted)
     }
 }
 
@@ -390,12 +473,14 @@ private fun DrawScope.drawAxes(f: MohrFrame, c: CalcColors, s: String, t: String
 private fun DrawScope.drawElement(theta: Double, c: CalcColors) {
     val centre = Offset(40.dp.toPx(), 40.dp.toPx())
     val h = 13.dp.toPx()
+    drawCircle(c.display.copy(alpha = 0.85f), 34.dp.toPx(), centre)
     drawLine(c.muted.copy(alpha = 0.5f), centre, centre + Offset(30.dp.toPx(), 0f), 1.dp.toPx())
     rotate(degrees = -Math.toDegrees(theta).toFloat(), pivot = centre) {
         val sq = Path().apply {
             moveTo(centre.x - h, centre.y - h); lineTo(centre.x + h, centre.y - h)
             lineTo(centre.x + h, centre.y + h); lineTo(centre.x - h, centre.y + h); close()
         }
+        drawPath(sq, c.graphFill)
         drawPath(sq, c.graphLine, style = Stroke(1.5.dp.toPx()))
         val tip = centre + Offset(h + 14.dp.toPx(), 0f)
         drawLine(c.highlight, centre + Offset(h, 0f), tip, 2.dp.toPx())
@@ -404,11 +489,52 @@ private fun DrawScope.drawElement(theta: Double, c: CalcColors) {
     }
 }
 
+private fun paint(color: Color, sizePx: Float, bold: Boolean = false) = android.graphics.Paint().apply {
+    isAntiAlias = true
+    this.color = color.toArgb()
+    textSize = sizePx
+    if (bold) typeface = android.graphics.Typeface.DEFAULT_BOLD
+}
+
+private fun textWidth(text: String, sizePx: Float) = paint(Color.Black, sizePx).measureText(text)
+
 private fun DrawScope.label(text: String, at: Offset, color: Color) {
-    val paint = android.graphics.Paint().apply {
-        isAntiAlias = true
-        this.color = color.toArgb()
-        textSize = 14.dp.toPx()
+    drawContext.canvas.nativeCanvas.drawText(text, at.x, at.y, paint(color, 14.dp.toPx()))
+}
+
+private fun DrawScope.small(text: String, at: Offset, color: Color, center: Boolean = false) {
+    val pt = paint(color.copy(alpha = 0.9f), 9.5.dp.toPx())
+    val x = if (center) at.x - pt.measureText(text) / 2 else at.x
+    drawContext.canvas.nativeCanvas.drawText(text, x, at.y, pt)
+}
+
+/**
+ * A point's label in a small rounded pill, placed on the side away from the circle's centre
+ * so it does not cover the circle, and kept inside the canvas.
+ */
+private fun DrawScope.tag(
+    text: String, at: Offset, centre: Offset, c: CalcColors, color: Color,
+    below: Boolean = false, strong: Boolean = false, stagger: Boolean = false,
+) {
+    val pt = paint(color, 11.dp.toPx(), bold = strong)
+    val w = pt.measureText(text)
+    val padH = 5.dp.toPx(); val h = 16.dp.toPx(); val gap = 7.dp.toPx()
+    val right = at.x >= centre.x
+    var left = if (right) at.x + gap else at.x - gap - w - 2 * padH
+    var top = when {
+        below -> at.y + gap + if (stagger) h + 2.dp.toPx() else 0f
+        at.y <= centre.y -> at.y - gap - h
+        else -> at.y + gap
     }
-    drawContext.canvas.nativeCanvas.drawText(text, at.x, at.y, paint)
+    left = left.coerceIn(2.dp.toPx(), size.width - w - 2 * padH - 2.dp.toPx())
+    top = top.coerceIn(2.dp.toPx(), size.height - h - 2.dp.toPx())
+    drawRoundRect(
+        c.display.copy(alpha = 0.88f), topLeft = Offset(left, top), size = Size(w + 2 * padH, h),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(h / 2),
+    )
+    drawRoundRect(
+        color.copy(alpha = 0.35f), topLeft = Offset(left, top), size = Size(w + 2 * padH, h),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(h / 2), style = Stroke(0.8.dp.toPx()),
+    )
+    drawContext.canvas.nativeCanvas.drawText(text, left + padH, top + h * 0.72f, pt)
 }

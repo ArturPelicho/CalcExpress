@@ -93,8 +93,8 @@
     <string name="mohr_strain">Dehnungen</string>
     <string name="mohr_by_angle">Winkel θ</string>
     <string name="mohr_by_normal">Normale n</string>
-    <string name="mohr_hint_2d">Um den Kreis ziehen, um die Ebene zu drehen. Positive Schubspannung zeigt nach unten, daher dreht sich der Punkt wie das Element.</string>
-    <string name="mohr_hint_3d">Der Punkt der Ebene liegt immer im schattierten Bereich zwischen den drei Kreisen.</string>
+    <string name="mohr_hint_2d">Um den Kreis ziehen oder tippen, um die Ebene zu drehen. Wähle, ob positive Schubspannung nach oben oder unten zeigt.</string>
+    <string name="mohr_hint_3d">Der Punkt der Ebene liegt immer im schattierten Bereich zwischen den drei Kreisen. Zum Wählen der Ebene ziehen.</string>
     <string name="mohr_principal">Hauptwerte</string>
     <string name="mohr_directions">Hauptrichtungen</string>
     <string name="mohr_on_plane">In der Ebene</string>
@@ -103,13 +103,12 @@
     <string name="mohr_fill">Bitte in jedes Feld eine Zahl eingeben.</string>
     <string name="mohr_strain_note">γ ist die Gleitung, positiv wenn der rechte Winkel zwischen x und y kleiner wird; der Kreis verwendet γ/2.</string>
     <string name="mohr_zero_normal">Die Normale darf nicht null sein.</string>
-    <string name="mohr_components">Komponenten x, y</string>
-    <string name="mohr_points">Punkte A und B</string>
-    <string name="mohr_points_note">A und B sind die Enden eines Durchmessers: zwei senkrechte Flächen eines beliebigen Elements, nicht unbedingt Hauptflächen. τ_B = −τ_A; θ wird ab Fläche A gemessen.</string>
+    <string name="mohr_points_note">x und y können zwei beliebige senkrechte Flächen sein, etwa die Punkte A und B an den Enden eines Durchmessers; θ wird ab x gemessen.</string>
     <string name="mohr_point">Im Punkt (x, y, z)</string>
     <string name="mohr_matrix">Tensormatrix</string>
     <string name="mohr_matrix_note">Außerhalb der Diagonale stehen Tensorkomponenten ε_ij = γ_ij/2; Ergebnisse zeigen γ.</string>
     <string name="mohr_field_hint">Für ein Feld die Einträge als Funktionen von x, y, z schreiben (z. B. 3x^2 − 2xy) und den Punkt angeben.</string>
     <string name="mohr_invariants">Invarianten</string>
-    <string name="mohr_from_face">ab Fläche %1$s</string>
+    <string name="mohr_by_angles">Winkel θ, φ</string>
+    <string name="mohr_angles_note">θ: ab x in der xy-Ebene; φ: ab z. Im Diagramm ziehen, um den Punkt der Ebene zu verschieben.</string>
 </resources>

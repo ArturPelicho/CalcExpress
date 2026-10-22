@@ -94,8 +94,8 @@
     <string name="mohr_strain">Strain</string>
     <string name="mohr_by_angle">Angle θ</string>
     <string name="mohr_by_normal">Normal n</string>
-    <string name="mohr_hint_2d">Drag around the circle to rotate the plane. Positive shear is drawn downwards, so the point turns the same way as the element.</string>
-    <string name="mohr_hint_3d">The plane\'s point always lies in the shaded region between the three circles.</string>
+    <string name="mohr_hint_2d">Drag around the circle, or tap it, to rotate the plane. Choose whether positive shear is drawn up or down.</string>
+    <string name="mohr_hint_3d">The plane\'s point always lies in the shaded region between the three circles. Drag on it to choose the plane.</string>
     <string name="mohr_principal">Principal values</string>
     <string name="mohr_directions">Principal directions</string>
     <string name="mohr_on_plane">On the plane</string>
@@ -104,13 +104,12 @@
     <string name="mohr_fill">Enter a number in every field.</string>
     <string name="mohr_strain_note">γ is the engineering shear strain, positive when the right angle between x and y decreases; the circle uses γ/2.</string>
     <string name="mohr_zero_normal">The normal cannot be zero.</string>
-    <string name="mohr_components">Components x, y</string>
-    <string name="mohr_points">Points A and B</string>
-    <string name="mohr_points_note">A and B are the ends of a diameter: two perpendicular faces of any element, not necessarily principal. τ_B = −τ_A, and θ is measured from face A.</string>
+    <string name="mohr_points_note">x and y can be any two perpendicular faces, such as the points A and B at the ends of a diameter; θ is measured from x.</string>
     <string name="mohr_point">At the point (x, y, z)</string>
     <string name="mohr_matrix">Tensor matrix</string>
     <string name="mohr_matrix_note">Off-diagonal entries are tensor components ε_ij = γ_ij/2; results show γ.</string>
     <string name="mohr_field_hint">For a field, write entries as functions of x, y, z (e.g. 3x^2 − 2xy) and give the point.</string>
     <string name="mohr_invariants">Invariants</string>
-    <string name="mohr_from_face">from face %1$s</string>
+    <string name="mohr_by_angles">Angles θ, φ</string>
+    <string name="mohr_angles_note">θ: from x in the xy-plane; φ: from z. Drag on the diagram to move the plane\'s point.</string>
 </resources>
