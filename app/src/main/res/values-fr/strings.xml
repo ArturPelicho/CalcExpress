@@ -99,6 +99,15 @@
     <string name="mohr_centre">Centre</string>
     <string name="mohr_radius">Rayon</string>
     <string name="mohr_fill">Saisissez un nombre dans chaque champ.</string>
-    <string name="mohr_strain_note">γ est la distorsion angulaire ; le cercle utilise γ/2.</string>
+    <string name="mohr_strain_note">γ est la distorsion angulaire, positive quand l’angle droit entre x et y diminue ; le cercle utilise γ/2.</string>
     <string name="mohr_zero_normal">La normale ne peut pas être nulle.</string>
+    <string name="mohr_components">Composantes x, y</string>
+    <string name="mohr_points">Points A et B</string>
+    <string name="mohr_points_note">A et B sont les extrémités d’un diamètre : deux faces perpendiculaires d’un élément quelconque, pas forcément principales. τ_B = −τ_A, et θ est mesuré depuis la face A.</string>
+    <string name="mohr_point">Au point (x, y, z)</string>
+    <string name="mohr_matrix">Matrice du tenseur</string>
+    <string name="mohr_matrix_note">Hors diagonale : composantes du tenseur ε_ij = γ_ij/2 ; les résultats donnent γ.</string>
+    <string name="mohr_field_hint">Pour un champ, écrivez les entrées en fonction de x, y, z (ex. 3x^2 − 2xy) et donnez le point.</string>
+    <string name="mohr_invariants">Invariants</string>
+    <string name="mohr_from_face">depuis la face %1$s</string>
 </resources>

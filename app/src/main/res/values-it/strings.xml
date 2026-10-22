@@ -99,6 +99,15 @@
     <string name="mohr_centre">Centro</string>
     <string name="mohr_radius">Raggio</string>
     <string name="mohr_fill">Inserisci un numero in ogni campo.</string>
-    <string name="mohr_strain_note">γ è lo scorrimento angolare; il cerchio usa γ/2.</string>
+    <string name="mohr_strain_note">γ è lo scorrimento angolare, positivo quando l’angolo retto tra x e y diminuisce; il cerchio usa γ/2.</string>
     <string name="mohr_zero_normal">La normale non può essere nulla.</string>
+    <string name="mohr_components">Componenti x, y</string>
+    <string name="mohr_points">Punti A e B</string>
+    <string name="mohr_points_note">A e B sono gli estremi di un diametro: due facce perpendicolari di un elemento qualsiasi, non necessariamente principali. τ_B = −τ_A, e θ si misura dalla faccia A.</string>
+    <string name="mohr_point">Nel punto (x, y, z)</string>
+    <string name="mohr_matrix">Matrice del tensore</string>
+    <string name="mohr_matrix_note">Fuori diagonale ci sono le componenti del tensore ε_ij = γ_ij/2; i risultati mostrano γ.</string>
+    <string name="mohr_field_hint">Per un campo, scrivi le voci in funzione di x, y, z (es. 3x^2 − 2xy) e indica il punto.</string>
+    <string name="mohr_invariants">Invarianti</string>
+    <string name="mohr_from_face">dalla faccia %1$s</string>
 </resources>

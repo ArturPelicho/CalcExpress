@@ -48,6 +48,7 @@ import com.arturpelicho.calcexpress.R
 import com.arturpelicho.calcexpress.core.AngleUnit
 import com.arturpelicho.calcexpress.core.Format
 import com.arturpelicho.calcexpress.core.Mohr
+import com.arturpelicho.calcexpress.core.TextExpr
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -93,9 +94,22 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
     val ny = rememberSaveable { mutableStateOf("1") }
     val nz = rememberSaveable { mutableStateOf("1") }
 
+    var byPoints by rememberSaveable { mutableStateOf(false) }
+    // Point where a stress/strain field (entries in x, y, z) is evaluated.
+    val px = rememberSaveable { mutableStateOf("0") }
+    val py = rememberSaveable { mutableStateOf("0") }
+    val pz = rememberSaveable { mutableStateOf("0") }
+
     val s = if (strain) "ε" else "σ"
-    val t = if (strain) "γ" else "τ"
-    val shearFactor = if (strain) 0.5 else 1.0
+    // 2D strain takes the engineering γ; the 3D matrix holds tensor components ε_ij = γ_ij/2.
+    val t = if (strain) (if (threeD) "ε" else "γ") else "τ"
+    val shearFactor = if (strain && !threeD) 0.5 else 1.0
+
+    val tensorFields = if (threeD) listOf(xx, yy, zz, xy, yz, xz) else listOf(xx, yy, xy)
+    val fieldVars = tensorFields.flatMap { TextExpr.variables(it.value) }.toSet()
+    val point = mapOf("x" to parseNum(px.value), "y" to parseNum(py.value), "z" to parseNum(pz.value))
+        .filterValues { it != null }.mapValues { it.value!! }
+    fun ev(f: MutableState<String>) = TextExpr.eval(f.value, point, unit)
 
     PageScaffold(stringResource(R.string.mohr_title), onBack) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp)) {
@@ -107,24 +121,32 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 FilterChip(threeD, { threeD = true }, { Text("3D") })
             }
 
-            val vxx = parseNum(xx.value); val vyy = parseNum(yy.value); val vzz = parseNum(zz.value)
-            val vxy = parseNum(xy.value)?.times(shearFactor)
-            val vyz = parseNum(yz.value)?.times(shearFactor)
-            val vxz = parseNum(xz.value)?.times(shearFactor)
+            val vxx = ev(xx); val vyy = ev(yy); val vzz = ev(zz)
+            val vxy = ev(xy)?.times(shearFactor)
+            val vyz = ev(yz)?.times(shearFactor)
+            val vxz = ev(xz)?.times(shearFactor)
 
             if (!threeD) {
                 val th = if (byNormal) {
                     val a = parseNum(nx.value); val b = parseNum(ny.value)
                     if (a != null && b != null && (a != 0.0 || b != 0.0)) atan2(b, a) else null
                 } else parseNum(theta.value)?.let { unit.toRadians(it) }
+                val faces = if (byPoints) "A" to "B" else "x" to "y"
                 if (vxx != null && vyy != null && vxy != null) {
-                    MohrCanvas2D(vxx, vyy, vxy, th ?: 0.0, s, t, strain) { newTheta ->
+                    MohrCanvas2D(vxx, vyy, vxy, th ?: 0.0, s, t, strain, faces) { newTheta ->
                         theta.value = editText(unit.fromRadians(newTheta))
                         nx.value = editText(cos(newTheta)); ny.value = editText(sin(newTheta))
                     }
                 } else BlankCanvas()
                 Text(stringResource(R.string.mohr_hint_2d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp))
-                FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", xy to "${t}_xy"))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(!byPoints, { byPoints = false }, { Text(stringResource(R.string.mohr_components)) })
+                    FilterChip(byPoints, { byPoints = true }, { Text(stringResource(R.string.mohr_points)) })
+                }
+                if (byPoints) FieldRow(listOf(xx to "${s}_A", xy to "${t}_A", yy to "${s}_B"), text = true)
+                else FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", xy to "${t}_xy"), text = true)
+                if (byPoints) Note(stringResource(R.string.mohr_points_note))
+                PointRow(fieldVars, threeD = false, px, py, pz)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
                     FilterChip(!byNormal, { byNormal = false }, { Text(stringResource(R.string.mohr_by_angle)) })
                     FilterChip(byNormal, { byNormal = true }, { Text(stringResource(R.string.mohr_by_normal)) })
@@ -132,8 +154,9 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 if (byNormal) FieldRow(listOf(nx to "n_x", ny to "n_y"))
                 else FieldRow(listOf(theta to "θ (${unit.label})"))
                 if (strain) Note(stringResource(R.string.mohr_strain_note))
+                Note(stringResource(R.string.mohr_field_hint))
                 if (vxx == null || vyy == null || vxy == null || th == null) Note(stringResource(R.string.mohr_fill))
-                else Results2D(vxx, vyy, vxy, th, s, t, strain, unit)
+                else Results2D(vxx, vyy, vxy, th, s, t, strain, unit, faces.first)
             } else {
                 val n = listOf(nx, ny, nz).map { parseNum(it.value) }
                 val ten = if (listOf(vxx, vyy, vzz, vxy, vyz, vxz).all { it != null })
@@ -143,12 +166,17 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
                 val onPlane = if (ten != null && normal != null) Mohr.onPlane3D(ten, normal) else null
                 if (p != null) MohrCanvas3D(p, onPlane, s, strain) else BlankCanvas()
                 Text(stringResource(R.string.mohr_hint_3d), color = c.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 6.dp))
-                FieldRow(listOf(xx to "${s}_x", yy to "${s}_y", zz to "${s}_z"))
-                FieldRow(listOf(xy to "${t}_xy", yz to "${t}_yz", xz to "${t}_xz"))
+                // The symmetric matrix: mirrored cells share their state, so editing either keeps it symmetric.
+                Text(stringResource(R.string.mohr_matrix), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
+                FieldRow(listOf(xx to "${s}_x", xy to "${t}_xy", xz to "${t}_xz"), text = true)
+                FieldRow(listOf(xy to "${t}_yx", yy to "${s}_y", yz to "${t}_yz"), text = true)
+                FieldRow(listOf(xz to "${t}_zx", yz to "${t}_zy", zz to "${s}_z"), text = true)
+                PointRow(fieldVars, threeD = true, px, py, pz)
                 Text(stringResource(R.string.mohr_by_normal), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
                 FieldRow(listOf(nx to "n_x", ny to "n_y", nz to "n_z"))
-                if (strain) Note(stringResource(R.string.mohr_strain_note))
-                if (p != null && normal != null) Results3D(p, onPlane, s, t, strain)
+                if (strain) Note(stringResource(R.string.mohr_matrix_note))
+                Note(stringResource(R.string.mohr_field_hint))
+                if (p != null && ten != null && normal != null) Results3D(p, ten, onPlane, s, t, strain)
                 else Note(stringResource(R.string.mohr_fill))
                 if (normal != null && onPlane == null) Note(stringResource(R.string.mohr_zero_normal))
             }
@@ -157,8 +185,17 @@ fun MohrPage(settings: AppSettings, onBack: () -> Unit) {
     }
 }
 
+/** Coordinates of the point, shown once an entry uses x, y or z. */
 @Composable
-private fun FieldRow(fields: List<Pair<MutableState<String>, String>>) {
+private fun PointRow(vars: Set<String>, threeD: Boolean, px: MutableState<String>, py: MutableState<String>, pz: MutableState<String>) {
+    if (vars.none { it in setOf("x", "y", "z") }) return
+    val used = listOf("x" to px, "y" to py, "z" to pz).take(if (threeD || "z" in vars) 3 else 2)
+    Text(stringResource(R.string.mohr_point), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+    FieldRow(used.map { (name, st) -> st to name })
+}
+
+@Composable
+private fun FieldRow(fields: List<Pair<MutableState<String>, String>>, text: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         fields.forEach { (state, label) ->
             OutlinedTextField(
@@ -166,7 +203,8 @@ private fun FieldRow(fields: List<Pair<MutableState<String>, String>>) {
                 onValueChange = { state.value = it },
                 label = { Text(mathLabel(label)) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                // Entries of a field may hold expressions in x, y, z.
+                keyboardOptions = KeyboardOptions(keyboardType = if (text) KeyboardType.Ascii else KeyboardType.Decimal),
                 textStyle = mathStyle(LocalMathFont.current, 17f, LocalCalcColors.current.text),
                 modifier = Modifier.weight(1f),
             )
@@ -194,7 +232,7 @@ private fun ResultLine(text: String) {
 private fun n(v: Double) = Format.number(v, 6)
 
 @Composable
-private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String, t: String, strain: Boolean, unit: AngleUnit) {
+private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String, t: String, strain: Boolean, unit: AngleUnit, from: String) {
     val m = Mohr.plane2D(sx, sy, txy)
     val p = Mohr.rotate2D(sx, sy, txy, th)
     val k = if (strain) 2.0 else 1.0
@@ -203,7 +241,10 @@ private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String
     ResultLine("${t}_max = ${n(k * m.maxShear)}")
     ResultLine("θ_p = ${angleText(m.thetaP, unit)}    θ_s = ${angleText(Mohr.normaliseHalfTurn(m.thetaS), unit)}")
     ResultLine("${stringResource(R.string.mohr_centre)} = ${n(m.centre)}    ${stringResource(R.string.mohr_radius)} = ${n(m.radius)}")
-    ResultTitle(stringResource(R.string.mohr_on_plane) + " θ = " + angleText(th, unit))
+    val (i1, i2) = Mohr.invariants2D(sx, sy, txy)
+    ResultTitle(stringResource(R.string.mohr_invariants))
+    ResultLine("I_1 = ${n(i1)}    I_2 = ${n(i2)}")
+    ResultTitle(stringResource(R.string.mohr_on_plane) + " θ = " + angleText(th, unit) + " (${stringResource(R.string.mohr_from_face, from)})")
     ResultLine("${s}_θ = ${n(p.normal)}    ${t}_θ = ${n(k * p.shear)}")
     // The perpendicular face completes the rotated element.
     val q = Mohr.rotate2D(sx, sy, txy, th + Math.PI / 2)
@@ -211,11 +252,16 @@ private fun Results2D(sx: Double, sy: Double, txy: Double, th: Double, s: String
 }
 
 @Composable
-private fun Results3D(p: Mohr.Principal3D, on: Mohr.Point?, s: String, t: String, strain: Boolean) {
+private fun Results3D(p: Mohr.Principal3D, ten: Mohr.Tensor3, on: Mohr.Point?, s: String, t: String, strain: Boolean) {
+    // Strain shear is reported as the engineering γ = 2·ε_ij.
     val k = if (strain) 2.0 else 1.0
+    val g = if (strain) "γ" else t
     ResultTitle(stringResource(R.string.mohr_principal))
     ResultLine("${s}_1 = ${n(p.values[0])}    ${s}_2 = ${n(p.values[1])}    ${s}_3 = ${n(p.values[2])}")
-    ResultLine("${t}_max = ${n(k * p.maxShear)}")
+    ResultLine("${g}_max = ${n(k * p.maxShear)}")
+    val (i1, i2, i3) = ten.invariants()
+    ResultTitle(stringResource(R.string.mohr_invariants))
+    ResultLine("I_1 = ${n(i1)}    I_2 = ${n(i2)}    I_3 = ${n(i3)}")
     ResultTitle(stringResource(R.string.mohr_directions))
     p.directions.forEachIndexed { i, d ->
         // Show each direction with a non-negative leading component, for readability.
@@ -224,7 +270,7 @@ private fun Results3D(p: Mohr.Principal3D, on: Mohr.Point?, s: String, t: String
     }
     if (on != null) {
         ResultTitle(stringResource(R.string.mohr_on_plane))
-        ResultLine("${s}_n = ${n(on.normal)}    ${t}_n = ${n(k * on.shear)}")
+        ResultLine("${s}_n = ${n(on.normal)}    ${g}_n = ${n(k * on.shear)}")
     }
 }
 
@@ -234,7 +280,7 @@ private fun BlankCanvas() {
 }
 
 @Composable
-private fun MohrCanvas2D(sx: Double, sy: Double, txy: Double, theta: Double, s: String, t: String, strain: Boolean, onTheta: (Double) -> Unit) {
+private fun MohrCanvas2D(sx: Double, sy: Double, txy: Double, theta: Double, s: String, t: String, strain: Boolean, faces: Pair<String, String>, onTheta: (Double) -> Unit) {
     val c = LocalCalcColors.current
     val m = Mohr.plane2D(sx, sy, txy)
     val lo = m.centre - m.radius; val hi = m.centre + m.radius
@@ -265,8 +311,8 @@ private fun MohrCanvas2D(sx: Double, sy: Double, txy: Double, theta: Double, s: 
         val px = Offset(f.x(sx), f.y(-txy)); val py = Offset(f.x(sy), f.y(txy))
         drawLine(c.muted, px, py, 1.2.dp.toPx())
         drawCircle(c.muted, 4.dp.toPx(), px); drawCircle(c.muted, 4.dp.toPx(), py)
-        label("x", px + Offset(6.dp.toPx(), -6.dp.toPx()), c.muted)
-        label("y", py + Offset(6.dp.toPx(), -6.dp.toPx()), c.muted)
+        label(faces.first, px + Offset(6.dp.toPx(), -6.dp.toPx()), c.muted)
+        label(faces.second, py + Offset(6.dp.toPx(), -6.dp.toPx()), c.muted)
         // Principal values on the axis.
         val p1 = Offset(f.x(m.p1), f.oy); val p2 = Offset(f.x(m.p2), f.oy)
         drawCircle(c.accent, 4.dp.toPx(), p1); drawCircle(c.accent, 4.dp.toPx(), p2)

@@ -61,7 +61,17 @@ object Mohr {
 
     data class Tensor3(val xx: Double, val yy: Double, val zz: Double, val xy: Double, val yz: Double, val xz: Double) {
         fun matrix() = arrayOf(doubleArrayOf(xx, xy, xz), doubleArrayOf(xy, yy, yz), doubleArrayOf(xz, yz, zz))
+
+        /** I₁ (trace), I₂ (sum of principal minors) and I₃ (determinant). */
+        fun invariants() = Triple(
+            xx + yy + zz,
+            xx * yy + yy * zz + zz * xx - xy * xy - yz * yz - xz * xz,
+            xx * yy * zz + 2 * xy * yz * xz - xx * yz * yz - yy * xz * xz - zz * xy * xy,
+        )
     }
+
+    /** I₁ and I₂ of a plane state. */
+    fun invariants2D(sx: Double, sy: Double, txy: Double) = (sx + sy) to (sx * sy - txy * txy)
 
     data class Principal3D(
         /** Principal values, largest first. */

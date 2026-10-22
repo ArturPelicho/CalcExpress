@@ -99,6 +99,15 @@
     <string name="mohr_centre">Mittelpunkt</string>
     <string name="mohr_radius">Radius</string>
     <string name="mohr_fill">Bitte in jedes Feld eine Zahl eingeben.</string>
-    <string name="mohr_strain_note">γ ist die Gleitung; der Kreis verwendet γ/2.</string>
+    <string name="mohr_strain_note">γ ist die Gleitung, positiv wenn der rechte Winkel zwischen x und y kleiner wird; der Kreis verwendet γ/2.</string>
     <string name="mohr_zero_normal">Die Normale darf nicht null sein.</string>
+    <string name="mohr_components">Komponenten x, y</string>
+    <string name="mohr_points">Punkte A und B</string>
+    <string name="mohr_points_note">A und B sind die Enden eines Durchmessers: zwei senkrechte Flächen eines beliebigen Elements, nicht unbedingt Hauptflächen. τ_B = −τ_A; θ wird ab Fläche A gemessen.</string>
+    <string name="mohr_point">Im Punkt (x, y, z)</string>
+    <string name="mohr_matrix">Tensormatrix</string>
+    <string name="mohr_matrix_note">Außerhalb der Diagonale stehen Tensorkomponenten ε_ij = γ_ij/2; Ergebnisse zeigen γ.</string>
+    <string name="mohr_field_hint">Für ein Feld die Einträge als Funktionen von x, y, z schreiben (z. B. 3x^2 − 2xy) und den Punkt angeben.</string>
+    <string name="mohr_invariants">Invarianten</string>
+    <string name="mohr_from_face">ab Fläche %1$s</string>
 </resources>
